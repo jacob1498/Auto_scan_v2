@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan Excess App</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary-color: #0073e6; /* Oracle Blue */
+            --secondary-color: #605951;
+            --success-color: #267d3d;
+            --danger-color: #b02b28;
+            --background: #f6f5f4; /* Redwood Canvas */
+            --card-bg: #ffffff;
+            --border-color: #dfe0e1;
+            --header-bg: #f9f8f7;
+        }
+
+        body {
+            font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--background);
+            margin: 0;
+            padding: 20px;
+            color: #312d2a;
+        }
+        /* Auth Mode Specific Styling */
+        body.auth-mode {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Ensure it takes full viewport height */
+            padding: 0; /* Remove body padding in auth mode */
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 95%;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+            margin-bottom: 2rem;
+        }
+        /* Specific styles for the auth card */
+        body.auth-mode #auth-section {
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            margin: 0 auto; /* Center horizontally and override card margin-bottom */
+        }
+        body.auth-mode #auth-section h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        body.auth-mode #auth-section .form-group {
+            margin-bottom: 1.5rem;
+        }
+        body.auth-mode #auth-section input {
+            padding: 1rem;
+            font-size: 1.1rem;
+        }
+        .app-logo {
+            margin-bottom: 1.5rem;
+        }
+
+        h2 { margin-top: 0; color: var(--primary-color); }
+
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+        .btn-primary { background: var(--primary-color); color: white; }
+        .btn-success { background: var(--success-color); color: white; }
+        .btn-danger { background: var(--danger-color); color: white; }
+        .btn-secondary { background: var(--secondary-color); color: white; }
+        .btn:hover { opacity: 0.9; }
+        
+        .btn-icon {
+            padding: 0.5rem;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .hidden { display: none; }
+
+        .grid-form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            font-size: 0.9rem;
+        }
+        th, td {
+            padding: 10px 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th { 
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: var(--header-bg);
+            color: var(--secondary-color);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            box-shadow: inset 0 -1px 0 var(--border-color);
+        }
+        tbody tr:nth-child(even) {
+            background-color: #faf9f8;
+        }
+        tbody tr:hover {
+            background-color: #f1f0ee;
+        }
+        th[onclick] {
+            cursor: pointer;
+            user-select: none;
+        }
+        th[onclick]:hover {
+            background: #edebe9;
+        }
+        .sort-asc::after { content: ' ↑'; }
+        .sort-desc::after { content: ' ↓'; }
+
+        .actions { display: flex; gap: 0.5rem; }
+        .header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 600px) {
+            table, thead, tbody, th, td, tr { display: block; }
+            thead tr { position: absolute; top: -9999px; left: -9999px; }
+            tr { border: 1px solid #ccc; margin-bottom: 5px; }
+            td { border: none; border-bottom: 1px solid #eee; position: relative; padding-left: 50%; }
+            td:before {
+                position: absolute; top: 6px; left: 6px; width: 45%; padding-right: 10px;
+                white-space: nowrap; content: attr(data-label); font-weight: bold;
+            }
+        }
+
+        /* Side-by-side Layout Styles */
+        .main-content {
+            display: flex;
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
+        .form-side { flex: 0 0 350px; }
+        .table-side { flex: 1; min-width: 0; }
+
+        @media (max-width: 1000px) {
+            .main-content { flex-direction: column; }
+            .form-side { flex: 1 1 auto; width: 100%; }
+        }
+
+        /* Toast Notification Styles */
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: #1e293b;
+            color: white;
+            padding: 2rem 4rem;
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-align: center;
+            min-width: 350px;
+        }
+        .toast.show {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Pagination Styles */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+            font-size: 0.875rem;
+        }
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .rows-selector-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .rows-selector-group select {
+            padding: 0.4rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            background: white;
+        }
+
+        /* Summary Section Styles */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .summary-card {
+            background: #ffffff;
+            padding: 1rem;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            border-top: 3px solid var(--primary-color);
+        }
+        .summary-card h4 {
+            margin: 0;
+            font-size: 0.75rem;
+            color: var(--secondary-color);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .summary-card p {
+            margin: 0.25rem 0 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+        }
+        .modal-content h3 { margin-top: 0; }
+        .radio-group { margin: 1.5rem 0; display: flex; flex-direction: column; gap: 0.75rem; }
+        .radio-option { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+        .radio-option input { width: auto; }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        .dashboard-stat {
+            padding: 1rem;
+            background: #f9f8f7;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+        .dashboard-stat h4 { margin: 0; font-size: 0.75rem; color: var(--secondary-color); text-transform: uppercase; }
+        .dashboard-stat p { margin: 0.5rem 0 0 0; font-size: 1.25rem; font-weight: 700; color: var(--primary-color); }
+
+        /* Storage Indicator Styles */
+        .storage-container {
+            margin-top: 4px;
+            text-align: right;
+        }
+        .storage-text {
+            font-size: 0.7rem;
+            color: var(--secondary-color);
+            display: block;
+            margin-bottom: 2px;
+        }
+        .storage-bar-bg {
+            width: 120px;
+            height: 4px;
+            background: var(--border-color);
+            border-radius: 2px;
+            display: inline-block;
+            overflow: hidden;
+        }
+        .storage-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--primary-color);
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Auth Section -->
+    <div id="auth-section" class="card">
+        <div class="app-logo">
+            <!-- Simple SVG Icon for a scanner or app logo -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-aperture">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="14.31" y1="8" x2="20.05" y2="17.94"></line>
+                <line x1="9.69" y1="8" x2="2.95" y2="17.94"></line>
+                <line x1="21.53" y1="12" x2="14.31" y2="12"></line>
+                <line x1="2.47" y1="12" x2="9.69" y2="12"></line>
+                <line x1="12" y1="2.05" x2="12" y2="9.31"></line>
+            </svg>
+        </div>
+        <h2 id="auth-title">Scan Excess App Login</h2>
+        <form id="auth-form">
+            <div class="form-group">
+                <label>Scanner Name</label>
+                <input type="text" id="username" required placeholder="Enter your name" autofocus>
+            </div>
+            <div class="form-group" id="login-password-group">
+                <label>Password</label>
+                <input type="password" id="login-password" required placeholder="Enter your password">
+            </div>
+            <div class="form-group">
+                <label>Shift</label>
+                <select id="shift" required>
+                    <option value="" disabled selected>Select Shift</option>
+                    <option value="1st Shift">1st Shift</option>
+                    <option value="2nd Shift">2nd Shift</option>
+                    <option value="3rd Shift">3rd Shift</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary" id="login-btn" style="width: 100%;">Login</button>
+            <p style="margin-top: 1rem; font-size: 0.9rem;">Don't have an account? <a href="#" onclick="showSignupForm()">Sign Up</a></p>
+        </form>
+    </div>
+
+    <!-- Signup Section -->
+    <div id="signup-section" class="card hidden">
+        <div class="app-logo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-aperture">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="14.31" y1="8" x2="20.05" y2="17.94"></line>
+                <line x1="9.69" y1="8" x2="2.95" y2="17.94"></line>
+                <line x1="21.53" y1="12" x2="14.31" y2="12"></line>
+                <line x1="2.47" y1="12" x2="9.69" y2="12"></line>
+                <line x1="12" y1="2.05" x2="12" y2="9.31"></line>
+            </svg>
+        </div>
+        <h2 id="signup-title">Register New Scanner</h2>
+        <form id="signup-form">
+            <div class="form-group">
+                <label>Scanner Name (e.g., JohnDoe)</label>
+                <input type="text" id="signup-username" required placeholder="Enter a unique scanner name">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="signup-password" required placeholder="Create a password">
+            </div>
+            <div class="form-group">
+                <label>Shift</label>
+                <select id="signup-shift" required>
+                    <option value="" disabled selected>Select Shift</option>
+                    <option value="1st Shift">1st Shift</option>
+                    <option value="2nd Shift">2nd Shift</option>
+                    <option value="3rd Shift">3st Shift</option>
+                </select>
+            </div>
+            <div class="form-group" style="text-align: left;">
+                <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
+                    <input type="checkbox" id="signup-is-admin" style="width: auto;"> Register as Admin
+                </label>
+            </div>
+            <button type="submit" class="btn btn-primary" id="signup-btn" style="width: 100%;">Sign Up</button>
+            <p style="margin-top: 1rem; font-size: 0.9rem;">Already have an account? <a href="#" onclick="showLoginForm()">Login</a></p>
+        </form>
+    </div>
+
+    <!-- Main App Section -->
+    <div id="app-section" class="hidden">
+        <div class="header-actions">
+            <h2>Excess Data Entry</h2>
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                <div class="storage-container">
+                    <span id="storage-text" class="storage-text">Storage: 0%</span>
+                    <div class="storage-bar-bg">
+                        <div id="storage-bar-fill" class="storage-bar-fill"></div>
+                    </div>
+                </div>
+                <div>
+                    <span id="display-scanner"></span>
+                    <button class="btn btn-primary" onclick="openDashboard()" style="margin-right: 0.5rem;">Dashboard</button>
+                    <button class="btn btn-secondary" onclick="logout()">Logout</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Left Side: Form -->
+            <div class="card form-side">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3 style="margin: 0; font-size: 1rem;">Data Entry</h3>
+                    <button type="button" id="quick-scan-btn" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="toggleQuickScanMode()">Quick Scan Mode</button>
+                </div>
+                <form id="data-form">
+                    <input type="hidden" id="edit-id">
+                    <div class="grid-form">
+                        <div class="form-group" id="date-container">
+                            <label>Date</label>
+                            <input type="date" id="date" required>
+                        </div>
+                        <div class="form-group" id="time-container">
+                            <label>Time</label>
+                            <input type="time" id="time" required>
+                        </div>
+                        <div class="form-group" id="remarks-container">
+                            <label style="display: flex; justify-content: space-between; align-items: center;">
+                                Remarks
+                                <span style="font-size: 0.75rem; font-weight: normal; display: flex; align-items: center; gap: 4px;">
+                                    <input type="checkbox" id="lock-remarks" style="width: auto;"> Lock
+                                </span>
+                            </label>
+                            <select id="remarks" required>
+                                <option value="Excess">Excess</option>
+                                <option value="Stocks Transfer">Stocks Transfer</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Barcode</label>
+                            <input type="text" id="barcode" required placeholder="Scan Barcode">
+                        </div>
+                        <div class="form-group">
+                            <label>Quantity</label>
+                            <input type="number" id="qty" required min="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Box #</label>
+                            <input type="text" id="box" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Pallet #</label>
+                            <input type="text" id="pallet" required>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem;">
+                        <button type="submit" class="btn btn-success" id="save-btn" style="width: 100%; margin-bottom: 0.5rem;">Add Entry</button>
+                        <button type="button" class="btn btn-secondary hidden" id="cancel-btn" onclick="resetForm()" style="width: 100%;">Cancel Edit</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Right Side: Data Table -->
+            <div class="card table-side">
+                <!-- Dynamic Summary Cards -->
+                <div id="summary-section" class="summary-grid"></div>
+
+                <div class="header-actions">
+                    <h3 style="white-space: nowrap; margin-right: 1rem;">Stored Entries</h3>
+                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; flex: 1;">
+                        <input type="date" id="start-date-filter" onchange="handleDateRangeChange()" title="Start Date" style="padding: 0.5rem; width: 130px; margin-bottom: 0;">
+                        <input type="date" id="end-date-filter" onchange="handleDateRangeChange()" title="End Date" style="padding: 0.5rem; width: 130px; margin-bottom: 0;">
+                        <input type="text" id="search-input" placeholder="Search Barcode/Box" oninput="handleSearch()" style="padding: 0.5rem; width: 160px; margin-bottom: 0;">
+                        <button class="btn btn-primary" onclick="exportToCSV()">Export to CSV</button>
+                        <button class="btn btn-danger" onclick="bulkDeleteByPallet()" title="Bulk Delete by Pallet #">Bulk Delete</button>
+                    </div>
+                </div>
+                <div style="overflow-x: auto; max-height: 600px; overflow-y: auto;">
+                    <table id="data-table">
+                        <thead>
+                            <tr>
+                                <th onclick="sortBy('date')">Date</th>
+                                <th onclick="sortBy('time')">Time</th>
+                                <th onclick="sortBy('shift')">Shift</th>
+                                <th onclick="sortBy('barcode')">Barcode</th>
+                                <th onclick="sortBy('qty')">Qty</th>
+                                <th onclick="sortBy('box')">Box #</th>
+                                <th onclick="sortBy('pallet')">Pallet #</th>
+                                <th onclick="sortBy('remarks')">Remarks</th>
+                                <th onclick="sortBy('scanner')">Scanner</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="data-body"></tbody>
+                    </table>
+                </div>
+                <div class="pagination-container">
+                    <div class="rows-selector-group">
+                        <label>Rows per page:</label>
+                        <select id="rows-per-page" onchange="updateRowsPerPage()">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                        </select>
+                    </div>
+                    <div class="pagination-controls">
+                        <span id="page-info"></span>
+                        <button id="prev-btn" class="btn btn-secondary" onclick="changePage(-1)" style="padding: 0.4rem 0.8rem;">Prev</button>
+                        <button id="next-btn" class="btn btn-secondary" onclick="changePage(1)" style="padding: 0.4rem 0.8rem;">Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Modal -->
+<div id="export-modal" class="modal-overlay">
+    <div class="modal-content card">
+        <h3>Export Data to CSV</h3>
+        <div class="radio-group">
+            <label class="radio-option">
+                <input type="radio" name="export-type" value="all" checked onchange="togglePalletSelect()"> 
+                Export All Stored Data
+            </label>
+            <label class="radio-option">
+                <input type="radio" name="export-type" value="pallet" onchange="togglePalletSelect()"> 
+                Filter by Pallet #
+            </label>
+            <select id="pallet-export-select" disabled style="margin-top: 5px;">
+                <option value="">-- Select Pallet --</option>
+            </select>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button class="btn btn-secondary" onclick="closeExportModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="processExport()">Download CSV</button>
+        </div>
+    </div>
+</div>
+
+<!-- Dashboard Modal -->
+<div id="dashboard-modal" class="modal-overlay">
+    <div class="modal-content card" style="max-width: 800px;">
+        <h3 style="color: var(--primary-color); border-bottom: 2px solid var(--background); padding-bottom: 0.5rem;">Quick Dashboard</h3>
+        <div id="dashboard-stats" class="dashboard-grid">
+            <!-- Dynamic Content -->
+        </div>
+        <div id="admin-user-management" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem; display: none;">
+            <h4 style="font-size: 0.8rem; color: var(--secondary-color); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Pending User Approvals</h4>
+            <div id="pending-users-list" style="margin-top: 0.5rem; font-size: 0.85rem;"></div>
+        </div>
+        <div style="margin-top: 1.5rem; height: 300px;">
+            <canvas id="trendsChart"></canvas>
+        </div>
+        <div style="margin-top: 2rem; display: flex; justify-content: flex-end;">
+            <button class="btn btn-primary" onclick="closeDashboard()">Close Dashboard</button>
+        </div>
+    </div>
+</div>
+
+<!-- Tutorial Modal -->
+<div id="tutorial-modal" class="modal-overlay">
+    <div class="modal-content card" style="max-width: 600px;">
+        <h3 style="color: var(--primary-color); border-bottom: 2px solid var(--background); padding-bottom: 0.5rem;">Welcome to Scan Excess App!</h3>
+        <div style="text-align: left; line-height: 1.6; max-height: 60vh; overflow-y: auto; padding-right: 10px;">
+            <p>This quick guide will help you get started:</p>
+            <ul>
+                <li><strong>Data Entry Form (Left Side):</strong>
+                    <ul>
+                        <li>Fill in details like Barcode, Quantity, Box #, Pallet #.</li>
+                        <li><strong>Remarks:</strong> Choose 'Excess' or 'Stocks Transfer'. Note the validation for 'Stocks Transfer' (Box # starts with SVI-B, Pallet # with SVI-P).</li>
+                        <li><strong>Lock Remarks:</strong> Check the 'Lock' box next to Remarks to keep the same selection for multiple scans.</li>
+                        <li><strong>Quick Scan Mode:</strong> Use the 'Quick Scan Mode' button to hide Date, Time, and Remarks for faster entry.</li>
+                        <li><strong>Barcode Focus:</strong> The Barcode field automatically refocuses after each entry for continuous scanning.</li>
+                    </ul>
+                </li>
+                <li><strong>Data Table (Right Side):</strong>
+                    <ul>
+                        <li>View, Edit, Delete, Sort, and Filter your entries.</li>
+                        <li><strong>Search & Filters:</strong> Use the search bar for Barcode/Box # and the date pickers for date range filtering.</li>
+                        <li><strong>Bulk Delete:</strong> Delete all entries for a specific Pallet #.</li>
+                    </ul>
+                </li>
+                <li><strong>Dashboard:</strong> Click the 'Dashboard' button for a quick overview of your scanning activity and trends.</li>
+                <li><strong>Export:</strong> Use the 'Export to CSV' button to download your data, either all or filtered by Pallet #.</li>
+                <li><strong>Storage Indicator:</strong> Keep an eye on the storage bar in the top right. Export and clear data if it gets too high!</li>
+            </ul>
+            <p>Happy Scanning!</p>
+        </div>
+        <div style="margin-top: 2rem; display: flex; justify-content: flex-end;">
+            <button class="btn btn-primary" onclick="closeTutorial()">Got It!</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+    // Supabase Configuration - REPLACE WITH YOUR PROJECT DETAILS
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+    const { createClient } = supabase;
+    const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // State Management
+    let currentUser = null; // Will be set from Supabase session
+    let entries = JSON.parse(localStorage.getItem('scan_excess_data')) || [];
+    let currentShift = null; // Will be set from Supabase profile
+    let isAdmin = false; // Will be set from Supabase profile
+    let currentUserId = null; // Supabase auth.uid()
+
+    let currentPage = 1;
+    let rowsPerPage = 10;
+    let currentSortColumn = 'id';
+    let currentSortDirection = 'desc';
+    let startDateFilter = '';
+    let endDateFilter = '';
+    let searchTerm = '';
+    let storageWarningShown = false;
+    let isQuickScanMode = false;
+    let hasSeenTutorial = localStorage.getItem('scan_excess_tutorial_seen') === 'true';
+    let trendsChart = null;
+
+    const authSection = document.getElementById('auth-section');
+    const appSection = document.getElementById('app-section');
+    const authForm = document.getElementById('auth-form');
+    const signupSection = document.getElementById('signup-section');
+    const signupForm = document.getElementById('signup-form');
+    const dataForm = document.getElementById('data-form');
+    const dataBody = document.getElementById('data-body');
+    const displayScanner = document.getElementById('display-scanner');
+    const tutorialModal = document.getElementById('tutorial-modal');
+
+    // Initialize
+    function init() {
+        _supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                currentUserId = session.user.id;
+                fetchUserProfile(session.user.id); // Fetch profile to get username, shift, admin status
+            }
+        });
+
+        // Always show login initially, profile fetch will redirect to app if session exists
+        showLoginForm();
+        setCurrentDateTime();
+        updateStorageUsage();
+    }
+
+    function showLoginForm() {
+        document.getElementById('auth-form').reset(); // Clear login form
+        document.body.classList.add('auth-mode');
+        authSection.classList.remove('hidden');
+        appSection.classList.add('hidden');
+        signupSection.classList.add('hidden');
+        tutorialModal.classList.add('hidden'); // Ensure tutorial is hidden initially
+    }
+
+    function setCurrentDateTime() {
+        const now = new Date();
+        document.getElementById('date').value = now.toISOString().split('T')[0];
+        document.getElementById('time').value = now.toTimeString().slice(0, 5);
+    }
+
+    function showSignupForm() {
+        document.getElementById('signup-form').reset(); // Clear signup form
+        document.body.classList.add('auth-mode');
+        authSection.classList.add('hidden');
+        appSection.classList.add('hidden');
+        signupSection.classList.remove('hidden');
+    }
+
+
+    function showApp() {
+        document.body.classList.remove('auth-mode');
+        authSection.classList.add('hidden');
+        appSection.classList.remove('hidden');
+        displayScanner.textContent = `${isAdmin ? 'ADMIN' : 'Scanner'}: ${currentUser} (${currentShift}) | `;
+        fetchDataFromCloud(); // Fetch data after user profile is loaded
+        if (!hasSeenTutorial) openTutorial(); // Show tutorial if not seen
+        renderTable();
+    }
+
+    async function fetchUserProfile(userId) {
+        const { data, error } = await _supabase
+            .from('profiles')
+            .select('username, shift, is_admin, is_approved')
+            .eq('id', userId)
+            .single();
+
+        if (error) {
+            console.error('Error fetching user profile:', error);
+            // If profile not found, might be a new user who just signed up but profile not created yet
+            // Or an error, so log out.
+            logout();
+            return;
+        }
+
+        if (data) {
+            if (!data.is_approved) {
+                alert('Your account is pending admin approval. Please wait for confirmation.');
+                logout();
+                return;
+            }
+
+            currentUser = data.username;
+            currentShift = data.shift;
+            isAdmin = data.is_admin;
+            showApp();
+        }
+    }
+
+    // Auth Logic
+    authForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const usernameInput = document.getElementById('username').value.trim();
+        const email = `${usernameInput}@scanner.com`; // Standardize email format for Supabase Auth
+        const password = document.getElementById('login-password').value;
+
+        // Authenticate with Supabase
+        const { data, error } = await _supabase.auth.signInWithPassword({
+            email: email,
+            password: password
+        });
+        if (error) {
+            alert('Login Failed: ' + error.message);
+            return;
+        }
+
+        if (data.user) {
+            currentUserId = data.user.id;
+            fetchUserProfile(data.user.id); // Fetch profile to get username, shift, admin status
+        }
+    });
+
+    signupForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('signup-username').value.trim();
+        const email = `${username}@scanner.com`; // Standardize email format for Supabase Auth
+        const password = document.getElementById('signup-password').value;
+        const shift = document.getElementById('signup-shift').value;
+        const isAdminUser = document.getElementById('signup-is-admin').checked;
+
+        // 1. Sign up with Supabase Auth
+        const { data: authData, error: authError } = await _supabase.auth.signUp({
+            email: email,
+            password: password,
+        });
+
+        if (authError) {
+            alert('Signup Failed: ' + authError.message);
+            return;
+        }
+
+        if (authData.user) {
+            // 2. Insert profile data into the 'profiles' table
+            const { error: profileError } = await _supabase
+                .from('profiles')
+                .insert([
+                    { id: authData.user.id, username: username, shift: shift, is_admin: isAdminUser, is_approved: false }
+                ]);
+
+            if (profileError) {
+                console.error('Error creating profile:', profileError);
+                alert('Signup successful, but failed to create user profile. Please contact support.');
+                // Optionally, sign out the user if profile creation failed
+                await _supabase.auth.signOut();
+                return;
+            }
+
+            currentUserId = authData.user.id;
+            hasSeenTutorial = false; // New user, so they haven't seen it
+            fetchUserProfile(authData.user.id); // Fetch profile to set app state
+            showToast('Registration successful! Please wait for admin approval.');
+        }
+    });
+
+    async function logout() {
+        // Clear Supabase session
+        await _supabase.auth.signOut();
+        // Clear local app state
+        currentUser = null;
+        currentShift = null;
+        isAdmin = false;
+        currentUserId = null;
+        updateStorageUsage();
+        showLoginForm(); // Redirect to login page
+    }
+
+    async function fetchDataFromCloud() {
+        const { data, error } = await _supabase.from('entries').select('*');
+
+        if (error) {
+            console.error('Error fetching data:', error);
+        } else if (data) {
+            entries = data;
+            saveAndRender();
+        }
+    }
+
+    // Data CRUD Logic
+    dataForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const entryId = document.getElementById('edit-id').value;
+        const remarks = document.getElementById('remarks').value;
+        const box = document.getElementById('box').value;
+        const pallet = document.getElementById('pallet').value;
+        const barcode = document.getElementById('barcode').value;
+
+        // Prevent duplicate barcode in the same box
+        const isDuplicate = entries.some(item => 
+            item.barcode === barcode && 
+            item.box === box && 
+            item.id !== (entryId ? parseInt(entryId) : null)
+        );
+
+        if (isDuplicate) {
+            alert(`Duplicate Error: Barcode ${barcode} has already been scanned into Box ${box}.`);
+            return;
+        }
+
+        // Validation for Stocks Transfer
+        if (remarks === 'Stocks Transfer') {
+            if (!box.startsWith('SVI-B')) {
+                alert('Box # must start with "SVI-B" for Stocks Transfer (e.g., SVI-B1)');
+                return;
+            }
+            if (!pallet.startsWith('SVI-P')) {
+                alert('Pallet # must start with "SVI-P" for Stocks Transfer (e.g., SVI-P1)');
+                return;
+            }
+        }
+
+        const newEntry = {
+            id: entryId ? parseInt(entryId) : Date.now(),
+            date: document.getElementById('date').value,
+            time: document.getElementById('time').value,
+            barcode: barcode,
+            qty: document.getElementById('qty').value,
+            box: box,
+            pallet: pallet,
+            remarks: remarks,
+            scanner: currentUser,
+            shift: currentShift
+            // user_id will be automatically set by the RLS policy's DEFAULT auth.uid()
+        };
+        
+        let message = 'Entry added successfully!';
+        let dbAction;
+
+        if (entryId) {
+            const index = entries.findIndex(item => item.id === parseInt(entryId));
+            entries[index] = newEntry;
+            message = 'Entry updated successfully!';
+            dbAction = _supabase.from('entries').update(newEntry).eq('id', entryId).eq('user_id', currentUserId); // Ensure user can only update their own
+        } else {
+            dbAction = _supabase.from('entries').insert([{ ...newEntry, user_id: currentUserId }]); // Explicitly set user_id for insert
+        }
+
+        const { error } = await dbAction;
+        if (error) {
+            alert('Cloud Sync Error: ' + error.message);
+        } else {
+            if (!entryId) {
+                entries.push(newEntry);
+                currentPage = 1;
+            }
+            saveAndRender();
+            resetForm();
+            showToast(message);
+            fetchDataFromCloud(); // Refresh to get real IDs from DB
+        }
+    });
+
+    function saveAndRender() {
+        localStorage.setItem('scan_excess_data', JSON.stringify(entries));
+        renderTable();
+        updateStorageUsage();
+    }
+
+    function updateStorageUsage() {
+        let totalBytes = 0;
+        let appBytes = 0;
+        const appKeys = ['scan_excess_data', 'scan_excess_user', 'scan_excess_shift'];
+
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            const value = localStorage.getItem(key);
+            const itemSize = (key.length + value.length) * 2;
+            
+            totalBytes += itemSize;
+            if (appKeys.includes(key)) {
+                appBytes += itemSize;
+            }
+        }
+        
+        const limit = 5 * 1024 * 1024; // Standard 5MB limit
+        const percentageNum = Math.min((totalBytes / limit) * 100, 100);
+        const appPercentage = ((appBytes / limit) * 100).toFixed(1);
+        const totalPercentage = percentageNum.toFixed(1);
+        const usedKB = (totalBytes / 1024).toFixed(1);
+
+        const text = document.getElementById('storage-text');
+        const bar = document.getElementById('storage-bar-fill');
+        
+        if (text && bar) {
+            // Updated UI to show a breakdown: App usage vs Total origin usage
+            text.textContent = `App: ${appPercentage}% | Total: ${totalPercentage}% (${usedKB}KB)`;
+            bar.style.width = totalPercentage + '%';
+            
+            // Visual warning colors
+            if (percentageNum > 90) bar.style.backgroundColor = 'var(--danger-color)'; // High alert (Red)
+            else if (percentageNum > 80) bar.style.backgroundColor = '#f59e0b'; // Warning (Orange) - matches toast
+            else bar.style.backgroundColor = 'var(--primary-color)';
+
+            // Automatic warning message
+            if (percentageNum > 80 && !storageWarningShown) {
+                showToast("⚠️ Storage usage exceeds 80%! Please export and clear data soon.");
+                storageWarningShown = true;
+            } else if (percentageNum <= 80) {
+                storageWarningShown = false;
+            }
+        }
+    }
+
+    function renderTable() {
+        dataBody.innerHTML = '';
+        updateSummary();
+
+        // Update header UI
+        document.querySelectorAll('th[onclick]').forEach(th => {
+            th.classList.remove('sort-asc', 'sort-desc');
+            if (th.getAttribute('onclick').includes(`'${currentSortColumn}'`)) {
+                th.classList.add(currentSortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+            }
+        });
+
+        // 1. Filter entries based on date range
+        const dateFilteredEntries = entries.filter(item => {
+            const itemDate = item.date; // Assuming item.date is in 'YYYY-MM-DD' format
+
+            let isAfterStartDate = true;
+            if (startDateFilter) {
+                isAfterStartDate = itemDate >= startDateFilter;
+            }
+
+            let isBeforeEndDate = true;
+            if (endDateFilter) {
+                isBeforeEndDate = itemDate <= endDateFilter;
+            }
+            return isAfterStartDate && isBeforeEndDate;
+        });
+
+        // 2. Filter entries based on search term (applied to date-filtered results)
+        const filteredEntries = dateFilteredEntries.filter(item => 
+            String(item.barcode).toLowerCase().includes(searchTerm) || 
+            String(item.box).toLowerCase().includes(searchTerm)
+        );
+
+        const sortedEntries = [...filteredEntries].sort((a, b) => {
+            let valA = a[currentSortColumn];
+            let valB = b[currentSortColumn];
+
+            if (currentSortColumn === 'qty') {
+                valA = Number(valA);
+                valB = Number(valB);
+            } else {
+                valA = String(valA || '').toLowerCase();
+                valB = String(valB || '').toLowerCase();
+            }
+
+            if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
+            if (valA > valB) return currentSortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        const totalItems = sortedEntries.length;
+        const totalPages = Math.ceil(totalItems / rowsPerPage) || 1;
+
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = start + rowsPerPage;
+        const paginatedEntries = sortedEntries.slice(start, end);
+
+        paginatedEntries.forEach(item => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td data-label="Date">${item.date}</td>
+                <td data-label="Time">${item.time}</td>
+                <td data-label="Shift">${item.shift || '-'}</td>
+                <td data-label="Barcode">${item.barcode}</td>
+                <td data-label="Qty">${item.qty}</td>
+                <td data-label="Box #">${item.box}</td>
+                <td data-label="Pallet #">${item.pallet}</td>
+                <td data-label="Remarks">${item.remarks}</td>
+                <td data-label="Scanner">${item.scanner}</td>
+                <td class="actions">
+                    <button class="btn btn-primary btn-icon" onclick="editEntry(${item.id})" title="Edit">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                    <button class="btn btn-danger btn-icon" onclick="deleteEntry(${item.id})" title="Delete">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                    </button>
+                </td>
+            `;
+            dataBody.appendChild(row);
+        });
+
+        // Update Pagination UI
+        document.getElementById('page-info').textContent = `Page ${currentPage} of ${totalPages} (${totalItems} items)`;
+        document.getElementById('prev-btn').disabled = currentPage === 1;
+        document.getElementById('next-btn').disabled = currentPage === totalPages || totalItems === 0;
+    }
+
+    function handleDateRangeChange() {
+        startDateFilter = document.getElementById('start-date-filter').value;
+        endDateFilter = document.getElementById('end-date-filter').value;
+        currentPage = 1; // Reset to page 1 when date filter changes
+        renderTable();
+    }
+
+    function bulkDeleteByPallet() {
+        const palletNum = prompt('Enter Pallet # to delete all related records:');
+        if (!palletNum) return;
+
+        if (confirm(`Are you sure you want to delete ALL records for Pallet #${palletNum}?`)) {
+            const countBefore = entries.length;
+            entries = entries.filter(item => item.pallet !== palletNum);
+            const countAfter = entries.length;
+
+            if (countBefore === countAfter) {
+                showToast(`No records found for Pallet #${palletNum}`);
+            } else {
+                saveAndRender();
+                showToast(`Deleted ${countBefore - countAfter} records for Pallet #${palletNum}`);
+            }
+        }
+    }
+
+    function handleSearch() {
+        searchTerm = document.getElementById('search-input').value.toLowerCase();
+        currentPage = 1; // Reset to page 1 when searching
+        renderTable();
+    }
+
+    function updateSummary() {
+        const summaryContainer = document.getElementById('summary-section');
+        if (!summaryContainer) return;
+
+        // Calculate totals grouped by Remarks
+        const totals = entries.reduce((acc, entry) => {
+            const type = entry.remarks || 'Other';
+            acc[type] = (acc[type] || 0) + Number(entry.qty);
+            return acc;
+        }, {});
+
+        summaryContainer.innerHTML = Object.entries(totals).map(([type, total]) => `
+            <div class="summary-card">
+                <h4>Total ${type}</h4>
+                <p>${total.toLocaleString()}</p>
+            </div>
+        `).join('');
+    }
+
+    function sortBy(column) {
+        if (currentSortColumn === column) {
+            currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSortColumn = column;
+            currentSortDirection = 'asc';
+        }
+        renderTable();
+    }
+
+    function changePage(dir) {
+        currentPage += dir;
+        renderTable();
+    }
+
+    function updateRowsPerPage() {
+        rowsPerPage = parseInt(document.getElementById('rows-per-page').value);
+        currentPage = 1;
+        renderTable();
+    }
+
+    function deleteEntry(id) {
+        if (confirm('Are you sure you want to delete this entry?')) {
+            entries = entries.filter(item => item.id !== id);
+            saveAndRender();
+        }
+    }
+
+    function editEntry(id) {
+        const item = entries.find(item => item.id === id);
+        if (item) {
+            document.getElementById('edit-id').value = item.id;
+            document.getElementById('date').value = item.date;
+            document.getElementById('time').value = item.time;
+            document.getElementById('barcode').value = item.barcode;
+            document.getElementById('qty').value = item.qty;
+            document.getElementById('box').value = item.box;
+            document.getElementById('pallet').value = item.pallet;
+            document.getElementById('remarks').value = item.remarks;
+            
+            document.getElementById('save-btn').textContent = 'Update Entry';
+            document.getElementById('cancel-btn').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+
+    function resetForm() {
+        const remarksVal = document.getElementById('remarks').value;
+        const isLocked = document.getElementById('lock-remarks').checked;
+        
+        dataForm.reset();
+        document.getElementById('edit-id').value = '';
+        document.getElementById('save-btn').textContent = 'Add Entry';
+        document.getElementById('cancel-btn').classList.add('hidden');
+        setCurrentDateTime();
+
+        if (isLocked) {
+            document.getElementById('remarks').value = remarksVal;
+            document.getElementById('lock-remarks').checked = true;
+        }
+        document.getElementById('barcode').focus();
+    }
+
+    function toggleQuickScanMode() {
+        isQuickScanMode = !isQuickScanMode;
+        const containers = ['date-container', 'time-container', 'remarks-container'];
+        
+        containers.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.toggle('hidden');
+        });
+
+        const btn = document.getElementById('quick-scan-btn');
+        if (isQuickScanMode) {
+            btn.textContent = 'Standard Mode';
+            btn.classList.replace('btn-secondary', 'btn-primary');
+            document.getElementById('lock-remarks').checked = true;
+        } else {
+            btn.textContent = 'Quick Scan Mode';
+            btn.classList.replace('btn-primary', 'btn-secondary');
+        }
+        document.getElementById('barcode').focus();
+    }
+
+    function openTutorial() {
+        tutorialModal.style.display = 'flex';
+    }
+
+    function closeTutorial() {
+        tutorialModal.style.display = 'none';
+        localStorage.setItem('scan_excess_tutorial_seen', 'true');
+        hasSeenTutorial = true;
+    }
+
+    function openDashboard() {
+        updateDashboardContent();
+        document.getElementById('dashboard-modal').style.display = 'flex';
+    }
+
+    function closeDashboard() {
+        document.getElementById('dashboard-modal').style.display = 'none';
+    }
+
+    async function approveUser(userId) {
+        const { error } = await _supabase
+            .from('profiles')
+            .update({ is_approved: true })
+            .eq('id', userId);
+        
+        if (error) {
+            alert('Approval failed: ' + error.message);
+        } else {
+            showToast('User approved successfully');
+            updateDashboardContent();
+        }
+    }
+
+    async function updateDashboardContent() {
+        const statsContainer = document.getElementById('dashboard-stats');
+        const adminSection = document.getElementById('admin-user-management');
+        const pendingList = document.getElementById('pending-users-list');
+
+        if (isAdmin) {
+            adminSection.style.display = 'block';
+            const { data: pendingUsers } = await _supabase.from('profiles').select('*').eq('is_approved', false);
+            pendingList.innerHTML = (pendingUsers && pendingUsers.length > 0) 
+                ? pendingUsers.map(u => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #faf9f8; border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 0.5rem;">
+                        <span><strong>${u.username}</strong> (${u.shift}) - ${u.is_admin ? 'Admin' : 'Scanner'}</span>
+                        <button class="btn btn-success" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="approveUser('${u.id}')">Approve</button>
+                    </div>`).join('')
+                : '<p style="color: var(--secondary-color); font-size: 0.8rem; font-style: italic;">No pending approvals.</p>';
+        } else {
+            adminSection.style.display = 'none';
+        }
+
+        const totalEntries = entries.length;
+        const totalQty = entries.reduce((sum, e) => sum + Number(e.qty), 0);
+        
+        const shiftData = entries.reduce((acc, e) => {
+            const s = e.shift || 'Unknown';
+            acc[s] = (acc[s] || 0) + Number(e.qty);
+            return acc;
+        }, {});
+
+        const remarksData = entries.reduce((acc, e) => {
+            const r = e.remarks || 'Other';
+            acc[r] = (acc[r] || 0) + Number(e.qty);
+            return acc;
+        }, {});
+
+        statsContainer.innerHTML = `
+            <div class="dashboard-stat"><h4>Total Entries</h4><p>${totalEntries}</p></div>
+            <div class="dashboard-stat"><h4>Total Quantity</h4><p>${totalQty.toLocaleString()}</p></div>
+            <div class="dashboard-stat" style="grid-column: span 2;">
+                <h4>Shift Performance (Qty)</h4>
+                <div style="margin-top: 5px; font-size: 0.85rem;">
+                    ${Object.entries(shiftData).map(([s, q]) => `<div>${s}: <strong>${q.toLocaleString()}</strong></div>`).join('')}
+                </div>
+            </div>
+        `;
+
+        // Prepare Trend Data (Count per Date)
+        const trends = entries.reduce((acc, e) => {
+            acc[e.date] = (acc[e.date] || 0) + 1;
+            return acc;
+        }, {});
+
+        const sortedDates = Object.keys(trends).sort();
+        const counts = sortedDates.map(date => trends[date]);
+
+        // Render Chart
+        const ctx = document.getElementById('trendsChart').getContext('2d');
+        if (trendsChart) trendsChart.destroy();
+
+        trendsChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: sortedDates,
+                datasets: [{
+                    label: 'Scan Volume',
+                    data: counts,
+                    borderColor: '#0073e6',
+                    backgroundColor: 'rgba(0, 115, 230, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+    }
+
+    // Export Logic
+    function exportToCSV() {
+        if (entries.length === 0) {
+            alert('No data to export');
+            return;
+        }
+
+        const modal = document.getElementById('export-modal');
+        const select = document.getElementById('pallet-export-select');
+        
+        // Populate unique pallets
+        const uniquePallets = [...new Set(entries.map(e => e.pallet))].sort();
+        select.innerHTML = '<option value="">-- Select Pallet --</option>';
+        uniquePallets.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p;
+            opt.textContent = p;
+            select.appendChild(opt);
+        });
+
+        modal.style.display = 'flex';
+    }
+
+    function togglePalletSelect() {
+        const type = document.querySelector('input[name="export-type"]:checked').value;
+        document.getElementById('pallet-export-select').disabled = (type === 'all');
+    }
+
+    function closeExportModal() {
+        document.getElementById('export-modal').style.display = 'none';
+    }
+
+    function processExport() {
+        const type = document.querySelector('input[name="export-type"]:checked').value;
+        let dataToExport = entries;
+        let filenameSuffix = 'all';
+
+        if (type === 'pallet') {
+            const palletVal = document.getElementById('pallet-export-select').value;
+            if (!palletVal) {
+                alert('Please select a pallet number');
+                return;
+            }
+            dataToExport = entries.filter(item => item.pallet === palletVal);
+            filenameSuffix = `pallet_${palletVal}`;
+        }
+
+        const headers = ['Line #', 'Date', 'Time', 'Shift', 'Barcode', 'Qty', 'Box #', 'Pallet #', 'Remarks', 'Scanner'];
+        const csvRows = [
+            headers.join(','),
+            ...dataToExport.map((row, index) => [
+                index + 1,
+                row.date,
+                row.time,
+                row.shift || '-',
+                `"${row.barcode}"`, // Wrap barcode in quotes to prevent scientific notation in Excel
+                row.qty,
+                `"${row.box}"`,
+                `"${row.pallet}"`,
+                `"${row.remarks}"`,
+                row.scanner
+            ].join(','))
+        ];
+
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', `excess_data_${filenameSuffix}_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        closeExportModal();
+    }
+
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+
+    // Sync Logic (Conceptual - you need a server-side endpoint)
+    async function syncDataToServer(dataToSync) {
+        // Replace with your actual Google Apps Script Web App URL or your backend API endpoint
+        const SERVER_API_URL = 'YOUR_SERVER_API_ENDPOINT_HERE';
+
+        if (SERVER_API_URL === 'YOUR_SERVER_API_ENDPOINT_HERE') {
+            console.warn('SERVER_API_URL is not configured. Data will only be saved locally.');
+            return;
+        }
+
+        try {
+            const response = await fetch(SERVER_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(dataToSync),
+            });
+
+            const result = await response.json();
+            console.log('Server response:', result);
+        } catch (error) {
+            console.error('Error syncing data to server:', error);
+        }
+    }
+
+    // Start the app
+    init();
+</script>
+
+</body>
+</html>    
