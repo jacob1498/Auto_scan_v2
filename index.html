@@ -345,8 +345,8 @@
         <h2 id="auth-title">Scan Excess App Login</h2>
         <form id="auth-form">
             <div class="form-group">
-                <label>Scanner Name</label>
-                <input type="text" id="username" required placeholder="Enter your name" autofocus>
+                <label>Email Address</label>
+                <input type="email" id="username" required placeholder="Enter your Gmail address" autofocus>
             </div>
             <div class="form-group" id="login-password-group">
                 <label>Password</label>
@@ -381,8 +381,12 @@
         <h2 id="signup-title">Register New Scanner</h2>
         <form id="signup-form">
             <div class="form-group">
-                <label>Scanner Name (e.g., JohnDoe)</label>
-                <input type="text" id="signup-username" required placeholder="Enter a unique scanner name">
+                <label>Display Name (Scanner Name)</label>
+                <input type="text" id="signup-username" required placeholder="e.g. John Doe">
+            </div>
+            <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="signup-email" required placeholder="e.g. yourname@gmail.com">
             </div>
             <div class="form-group">
                 <label>Password</label>
@@ -732,11 +736,10 @@
     // Auth Logic
     authForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const usernameInput = document.getElementById('username').value.trim().replace(/\s+/g, '');
-        const email = `${usernameInput.toLowerCase()}@scanner.com`; 
+        const email = document.getElementById('username').value.trim();
         const password = document.getElementById('login-password').value;
 
-        if (!usernameInput) return alert("Please enter a scanner name.");
+        if (!email) return alert("Please enter your email.");
 
         // Authenticate with Supabase
         const { data, error } = await _supabase.auth.signInWithPassword({
@@ -757,8 +760,7 @@
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const username = document.getElementById('signup-username').value.trim();
-        const sanitizedUsername = username.replace(/\s+/g, '').toLowerCase();
-        const email = `${sanitizedUsername}@scanner.com`; 
+        const email = document.getElementById('signup-email').value.trim();
         const password = document.getElementById('signup-password').value;
         const shift = document.getElementById('signup-shift').value;
         const isAdminUser = document.getElementById('signup-is-admin').checked;
