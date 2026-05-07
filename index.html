@@ -394,7 +394,6 @@
                     <option value="" disabled selected>Select Shift</option>
                     <option value="1st Shift">1st Shift</option>
                     <option value="2nd Shift">2nd Shift</option>
-                    <option value="3rd Shift">3st Shift</option>
                 </select>
             </div>
             <div class="form-group" style="text-align: left;">
@@ -733,9 +732,11 @@
     // Auth Logic
     authForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const usernameInput = document.getElementById('username').value.trim();
-        const email = `${usernameInput}@scanner.com`; // Standardize email format for Supabase Auth
+        const usernameInput = document.getElementById('username').value.trim().replace(/\s+/g, '');
+        const email = `${usernameInput.toLowerCase()}@scanner.com`; 
         const password = document.getElementById('login-password').value;
+
+        if (!usernameInput) return alert("Please enter a scanner name.");
 
         // Authenticate with Supabase
         const { data, error } = await _supabase.auth.signInWithPassword({
@@ -756,7 +757,8 @@
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const username = document.getElementById('signup-username').value.trim();
-        const email = `${username}@scanner.com`; // Standardize email format for Supabase Auth
+        const sanitizedUsername = username.replace(/\s+/g, '').toLowerCase();
+        const email = `${sanitizedUsername}@scanner.com`; 
         const password = document.getElementById('signup-password').value;
         const shift = document.getElementById('signup-shift').value;
         const isAdminUser = document.getElementById('signup-is-admin').checked;
@@ -769,6 +771,11 @@
 
         if (authError) {
             alert('Signup Failed: ' + authError.message);
+            return;
+        }
+
+        if (authData.user && !authData.session) {
+            alert('Registration received! Please note: Email confirmation is enabled in Supabase. Registration cannot complete until confirmed, or disable "Confirm Email" in Supabase settings.');
             return;
         }
 
