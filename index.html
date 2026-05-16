@@ -506,11 +506,13 @@
                             <option value="Stocks Transfer">Stocks Transfer</option>
                             <option value="RTV">RTV</option>
                         </select>
-                        <input type="file" id="master-data-input" accept=".csv" style="display: none;" onchange="importMasterData(event)">
-                        <button class="btn btn-secondary" onclick="document.getElementById('master-data-input').click()">Load Master Data</button>
                         <input type="text" id="search-input" placeholder="Search Barcode/Box" oninput="handleSearch()" style="padding: 0.5rem; width: 160px; margin-bottom: 0;">
-                        <button class="btn btn-primary" onclick="exportToCSV()">Export to CSV</button>
-                        <button class="btn btn-danger" onclick="bulkDeleteByPallet()" title="Bulk Delete by Pallet #">Bulk Delete</button>
+                        <div style="display: flex; gap: 4px; background: #f3f2f1; padding: 4px; border-radius: 4px; border: 1px solid var(--border-color); align-items: center;">
+                            <input type="file" id="master-data-input" accept=".csv" style="display: none;" onchange="importMasterData(event)">
+                            <button type="button" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="document.getElementById('master-data-input').click()" title="Master Data (F2)">Master Data (F2)</button>
+                            <button type="button" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="exportToCSV()" title="Export (F4)">Export (F4)</button>
+                            <button type="button" class="btn btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="bulkDeleteByPallet()" title="Bulk Delete (F8)">Bulk Delete (F8)</button>
+                        </div>
                     </div>
                 </div>
                 <div style="overflow-x: auto;">
@@ -654,6 +656,7 @@
         setCurrentDateTime();
         updateStorageUsage();
         setupEnterKeyNavigation();
+        setupGlobalShortcuts();
     }
 
     function initIndexedDB() {
@@ -871,6 +874,24 @@
                     }
                 }
             });
+        });
+    }
+
+    function setupGlobalShortcuts() {
+        window.addEventListener('keydown', (e) => {
+            // Only listen for shortcuts if the app section is visible
+            if (appSection.classList.contains('hidden')) return;
+            
+            if (e.key === 'F2') {
+                e.preventDefault();
+                document.getElementById('master-data-input').click();
+            } else if (e.key === 'F4') {
+                e.preventDefault();
+                exportToCSV();
+            } else if (e.key === 'F8') {
+                e.preventDefault();
+                bulkDeleteByPallet();
+            }
         });
     }
 
