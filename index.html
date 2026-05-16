@@ -730,16 +730,39 @@
     document.getElementById('item-condition').addEventListener('change', updateCustomConditionVisibility);
 
     // Master Data Import and Lookup
+    function parseCSVRow(text) {
+        const result = [];
+        let field = "";
+        let inQuotes = false;
+        for (let i = 0; i < text.length; i++) {
+            let char = text[i];
+            if (char === '"') {
+                if (inQuotes && text[i + 1] === '"') {
+                    field += '"'; i++; // Handle escaped quotes ""
+                } else {
+                    inQuotes = !inQuotes;
+                }
+            } else if (char === ',' && !inQuotes) {
+                result.push(field.trim());
+                field = "";
+            } else {
+                field += char;
+            }
+        }
+        result.push(field.trim());
+        return result;
+    }
+
     function importMasterData(event) {
         const file = event.target.files[0];
         if (!file || !db) return;
         const reader = new FileReader();
         reader.onload = function(e) {
             const text = e.target.result;
-            const rows = text.split('\n').filter(row => row.trim());
+            const rows = text.split(/\r?\n/).filter(row => row.trim());
             if (rows.length < 2) return;
 
-            const headers = rows[0].split(',').map(h => h.trim().toLowerCase());
+            const headers = parseCSVRow(rows[0]).map(h => h.toLowerCase());
             const transaction = db.transaction(["masterData"], "readwrite");
             const store = transaction.objectStore("masterData");
             
@@ -748,7 +771,7 @@
             
             let count = 0;
             for (let i = 1; i < rows.length; i++) {
-                const values = rows[i].split(',').map(v => v.trim());
+                const values = parseCSVRow(rows[i]);
                 if (values.length < 2) continue;
                 
                 const entry = {};
@@ -1420,21 +1443,21 @@
             headers.join(','),
             ...dataToExport.map((row, index) => [
                 index + 1,
-                row.date,
-                row.time,
-                row.shift || '-',
+                `"${row.date}"`,
+                `"${row.time}"`,
+                `"${row.shift || '-'}"`,
                 `="\t${row.barcode}"`, // Use formula syntax with a tab to force Excel to treat as text
-                `"${row.productName || ''}"`,
-                `"${row.sku || ''}"`,
-                `"${row.returnType || ''}"`,
-                `"${row.supplierName || ''}"`,
+                `"${(row.productName || '').replace(/"/g, '""')}"`,
+                `"${(row.sku || '').replace(/"/g, '""')}"`,
+                `"${(row.returnType || '').replace(/"/g, '""')}"`,
+                `"${(row.supplierName || '').replace(/"/g, '""')}"`,
                 row.qty,
-                `"${row.box}"`,
-                `"${row.pallet}"`,
-                `"${row.remarks}"`,
-                row.expiryDate || '',
-                `"${row.itemCondition || ''}"`,
-                row.scanner
+                `"${(row.box || '').replace(/"/g, '""')}"`,
+                `"${(row.pallet || '').replace(/"/g, '""')}"`,
+                `"${(row.remarks || '').replace(/"/g, '""')}"`,
+                `"${row.expiryDate || ''}"`,
+                `"${(row.itemCondition || '').replace(/"/g, '""')}"`,
+                `"${(row.scanner || '').replace(/"/g, '""')}"`
             ].join(','))
         ];
 
