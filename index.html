@@ -457,7 +457,7 @@
                         </div>
                         <div class="form-group hidden span-2" id="item-condition-container">
                             <label>Item Condition</label>
-                            <select id="item-condition" required>
+                            <select id="item-condition">
                                 <option value="" disabled selected>Select Condition</option>
                                 <option value="Good">Good</option>
                                 <option value="Expired">Expired</option>
@@ -500,6 +500,12 @@
                     <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; flex: 1;">
                         <input type="date" id="start-date-filter" onchange="handleDateRangeChange()" title="Start Date" style="padding: 0.5rem; width: 130px; margin-bottom: 0;">
                         <input type="date" id="end-date-filter" onchange="handleDateRangeChange()" title="End Date" style="padding: 0.5rem; width: 130px; margin-bottom: 0;">
+                        <select id="table-remark-filter" onchange="renderTable()" style="padding: 0.5rem; width: 130px; margin-bottom: 0;">
+                            <option value="all">All Remarks</option>
+                            <option value="Excess">Excess</option>
+                            <option value="Stocks Transfer">Stocks Transfer</option>
+                            <option value="RTV">RTV</option>
+                        </select>
                         <input type="file" id="master-data-input" accept=".csv" style="display: none;" onchange="importMasterData(event)">
                         <button class="btn btn-secondary" onclick="document.getElementById('master-data-input').click()">Load Master Data</button>
                         <input type="text" id="search-input" placeholder="Search Barcode/Box" oninput="handleSearch()" style="padding: 0.5rem; width: 160px; margin-bottom: 0;">
@@ -699,12 +705,26 @@
         const remarksEl = document.getElementById('remarks');
         const expiryContainer = document.getElementById('expiry-container');
         const conditionContainer = document.getElementById('item-condition-container');
+        const expiryInput = document.getElementById('expiry-date');
+        const conditionSelect = document.getElementById('item-condition');
+        const tableFilter = document.getElementById('table-remark-filter');
+
         if (remarksEl.value === 'RTV') {
             expiryContainer.classList.remove('hidden');
             conditionContainer.classList.remove('hidden');
+            expiryInput.required = true;
+            conditionSelect.required = true;
         } else {
             expiryContainer.classList.add('hidden');
             conditionContainer.classList.add('hidden');
+            expiryInput.required = false;
+            conditionSelect.required = false;
+        }
+
+        // Sync Table View with Form Selection
+        if (tableFilter) {
+            tableFilter.value = remarksEl.value;
+            renderTable();
         }
         updateCustomConditionVisibility();
     }
@@ -869,10 +889,11 @@
         const entryId = document.getElementById('edit-id').value;
         const barcode = document.getElementById('barcode').value;
         const remarks = document.getElementById('remarks').value;
-        const expiryDate = document.getElementById('expiry-date').value;
+        const isRTV = remarks === 'RTV';
+        const expiryDate = isRTV ? document.getElementById('expiry-date').value : null;
         
-        let itemCondition = document.getElementById('item-condition').value;
-        if (itemCondition === 'Others') {
+        let itemCondition = isRTV ? document.getElementById('item-condition').value : null;
+        if (isRTV && itemCondition === 'Others') {
             itemCondition = document.getElementById('custom-condition').value;
         }
 
@@ -889,7 +910,7 @@
             box: document.getElementById('box').value,
             pallet: document.getElementById('pallet').value,
             remarks: remarks,
-            expiryDate: remarks === 'RTV' ? expiryDate : null,
+            expiryDate: expiryDate,
             itemCondition: itemCondition,
             scanner: currentUser,
             shift: currentShift
@@ -1203,19 +1224,16 @@
         document.getElementById('edit-id').value = '';
         document.getElementById('save-btn').textContent = 'Add Entry';
         document.getElementById('cancel-btn').classList.add('hidden');
-        document.getElementById('expiry-container').classList.add('hidden');
-        document.getElementById('item-condition-container').classList.add('hidden');
-        document.getElementById('custom-condition-container').classList.add('hidden');
-        setCurrentDateTime();
 
         if (isLocked) {
             document.getElementById('remarks').value = remarksVal;
             document.getElementById('lock-remarks').checked = true;
-            if (remarksVal === 'RTV') {
-                document.getElementById('expiry-container').classList.remove('hidden');
-                document.getElementById('item-condition-container').classList.remove('hidden');
-            }
+        } else {
+            document.getElementById('table-remark-filter').value = 'all';
         }
+
+        updateExpiryVisibility();
+        setCurrentDateTime();
         document.getElementById('barcode').focus();
     }
 
