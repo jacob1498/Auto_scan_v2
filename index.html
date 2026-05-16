@@ -71,14 +71,15 @@
 
         h2 { margin-top: 0; color: var(--primary-color); }
 
-        .form-group { margin-bottom: 1rem; }
-        label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
+        .form-group { margin-bottom: 0.75rem; }
+        label { display: block; margin-bottom: 0.25rem; font-weight: 600; font-size: 0.85rem; }
         input, select {
             width: 100%;
-            padding: 0.75rem;
+            padding: 0.6rem;
             border: 1px solid var(--border-color);
             border-radius: 4px;
             box-sizing: border-box;
+            font-size: 0.9rem;
         }
 
         .btn {
@@ -105,9 +106,10 @@
 
         .grid-form {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem 0.75rem;
         }
+        .span-2 { grid-column: span 2; }
 
         table {
             width: 100%;
@@ -180,7 +182,7 @@
             align-items: flex-start;
         }
 
-        .form-side { flex: 0 0 400px; }
+        .form-side { flex: 0 0 450px; }
         .table-side { flex: 1; min-width: 0; }
 
         @media (max-width: 1000px) {
@@ -399,18 +401,44 @@
                 <form id="data-form">
                     <input type="hidden" id="edit-id">
                     <div class="grid-form">
-                        <div class="form-group" id="date-container">
-                            <label>Date</label>
-                            <input type="date" id="date" required>
+                        <!-- Row 1: Meta -->
+                        <div class="form-group" id="date-container"><label>Date</label><input type="date" id="date" required></div>
+                        <div class="form-group" id="time-container"><label>Time</label><input type="time" id="time" required></div>
+                        
+                        <!-- Row 2: Scanner Input -->
+                        <div class="form-group span-2">
+                            <label>Barcode</label>
+                            <input type="text" id="barcode" required placeholder="Scan Barcode" oninput="handleBarcodeLookup()">
                         </div>
-                        <div class="form-group" id="time-container">
-                            <label>Time</label>
-                            <input type="time" id="time" required>
+                        
+                        <!-- Row 3: Product Info (Read-only) -->
+                        <div class="form-group span-2">
+                            <label>Product Name</label>
+                            <input type="text" id="product-name" readonly placeholder="Auto-filled" style="background: #f0f0f0;">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>SKU</label>
+                            <input type="text" id="sku" readonly placeholder="Auto-filled" style="background: #f0f0f0;">
+                        </div>
+                        <div class="form-group">
+                            <label>Return Type</label>
+                            <input type="text" id="return-type" readonly placeholder="Auto-filled" style="background: #f0f0f0;">
+                        </div>
+                        <div class="form-group span-2">
+                            <label>Supplier Name</label>
+                            <input type="text" id="supplier-name" readonly placeholder="Auto-filled" style="background: #f0f0f0;">
+                        </div>
+
+                        <!-- Row 4: Transaction Data -->
+                        <div class="form-group">
+                            <label>Quantity</label>
+                            <input type="number" id="qty" required min="1">
                         </div>
                         <div class="form-group" id="remarks-container">
                             <label style="display: flex; justify-content: space-between; align-items: center;">
                                 Remarks
-                                <span style="font-size: 0.75rem; font-weight: normal; display: flex; align-items: center; gap: 4px;">
+                                <span style="font-size: 0.7rem; font-weight: normal; display: flex; align-items: center; gap: 2px;">
                                     <input type="checkbox" id="lock-remarks" style="width: auto;"> Lock
                                 </span>
                             </label>
@@ -420,35 +448,17 @@
                                 <option value="RTV">RTV</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label>Barcode</label>
-                            <input type="text" id="barcode" required placeholder="Scan Barcode" oninput="handleBarcodeLookup()">
-                        </div>
-                        <div class="form-group">
-                            <label>Product Name</label>
-                            <input type="text" id="product-name" readonly placeholder="Auto-filled from Master" style="background: #f0f0f0;">
-                        </div>
-                        <div class="form-group">
-                            <label>SKU</label>
-                            <input type="text" id="sku" readonly placeholder="Auto-filled" style="background: #f0f0f0;">
-                        </div>
-                        <div class="form-group">
-                            <label>Return Type</label>
-                            <input type="text" id="return-type" readonly placeholder="Auto-filled" style="background: #f0f0f0;">
-                        </div>
-                        <div class="form-group">
-                            <label>Supplier Name</label>
-                            <input type="text" id="supplier-name" readonly placeholder="Auto-filled" style="background: #f0f0f0;">
-                        </div>
-                        <div class="form-group">
-                            <label>Quantity</label>
-                            <input type="number" id="qty" required min="1">
-                        </div>
+
+                        <!-- Row 5: Logistics -->
+                        <div class="form-group"><label>Box #</label><input type="text" id="box" required></div>
+                        <div class="form-group"><label>Pallet #</label><input type="text" id="pallet" required></div>
+
+                        <!-- Conditional Rows (RTV only) -->
                         <div class="form-group hidden" id="expiry-container">
                             <label>Expiration Date</label>
                             <input type="month" id="expiry-date">
                         </div>
-                        <div class="form-group hidden" id="item-condition-container">
+                        <div class="form-group hidden span-2" id="item-condition-container">
                             <label>Item Condition</label>
                             <select id="item-condition" required>
                                 <option value="" disabled selected>Select Condition</option>
@@ -467,17 +477,9 @@
                                 <option value="Others">Others</option>
                             </select>
                         </div>
-                        <div class="form-group hidden" id="custom-condition-container">
+                        <div class="form-group hidden span-2" id="custom-condition-container">
                             <label>Specify Condition</label>
                             <input type="text" id="custom-condition" placeholder="Enter other condition">
-                        </div>
-                        <div class="form-group">
-                            <label>Box #</label>
-                            <input type="text" id="box" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Pallet #</label>
-                            <input type="text" id="pallet" required>
                         </div>
                     </div>
                     <div style="margin-top: 1rem;">
