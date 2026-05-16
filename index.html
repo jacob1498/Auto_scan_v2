@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scan Excess App</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary-color: #0073e6; /* Oracle Blue */
@@ -35,9 +34,9 @@
         }
 
         .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            width: 95%;
+            max-width: 100%;
+            margin: 0 10px;
+            width: calc(100% - 20px);
         }
 
         .card {
@@ -114,18 +113,24 @@
             width: 100%;
             border-collapse: collapse;
             background: white;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            table-layout: fixed;
         }
         th, td {
-            padding: 10px 8px;
+            padding: 0 8px;
             text-align: left;
             border-bottom: 1px solid var(--border-color);
+            border: 1px solid #d1d1d1;
+            height: 30px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         th { 
             position: sticky;
             top: 0;
             z-index: 10;
-            background: var(--header-bg);
+            background: #f3f2f1;
             color: var(--secondary-color);
             text-transform: uppercase;
             font-size: 0.75rem;
@@ -174,7 +179,8 @@
             gap: 1.5rem;
             align-items: flex-start;
         }
-        .form-side { flex: 0 0 350px; }
+
+        .form-side { flex: 0 0 400px; }
         .table-side { flex: 1; min-width: 0; }
 
         @media (max-width: 1000px) {
@@ -279,6 +285,8 @@
             width: 100%;
             max-width: 450px;
             box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+            max-height: 90vh;
+            overflow-y: auto;
         }
         .modal-content h3 { margin-top: 0; }
         .radio-group { margin: 1.5rem 0; display: flex; flex-direction: column; gap: 0.75rem; }
@@ -300,6 +308,7 @@
         .dashboard-stat p { margin: 0.5rem 0 0 0; font-size: 1.25rem; font-weight: 700; color: var(--primary-color); }
 
         /* Storage Indicator Styles */
+        /* ... (existing storage styles) ... */
         .storage-container {
             margin-top: 4px;
             text-align: right;
@@ -345,12 +354,8 @@
         <h2 id="auth-title">Scan Excess App Login</h2>
         <form id="auth-form">
             <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" id="username" required placeholder="Enter your Gmail address" autofocus>
-            </div>
-            <div class="form-group" id="login-password-group">
-                <label>Password</label>
-                <input type="password" id="login-password" required placeholder="Enter your password">
+                <label>Scanner Name</label>
+                <input type="text" id="username" required placeholder="Enter your name" autofocus>
             </div>
             <div class="form-group">
                 <label>Shift</label>
@@ -361,52 +366,7 @@
                     <option value="3rd Shift">3rd Shift</option>
                 </select>
             </div>
-            <button type="submit" class="btn btn-primary" id="login-btn" style="width: 100%;">Login</button>
-            <p style="margin-top: 1rem; font-size: 0.9rem;">Don't have an account? <a href="#" onclick="showSignupForm()">Sign Up</a></p>
-        </form>
-    </div>
-
-    <!-- Signup Section -->
-    <div id="signup-section" class="card hidden">
-        <div class="app-logo">
-            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--primary-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-aperture">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="14.31" y1="8" x2="20.05" y2="17.94"></line>
-                <line x1="9.69" y1="8" x2="2.95" y2="17.94"></line>
-                <line x1="21.53" y1="12" x2="14.31" y2="12"></line>
-                <line x1="2.47" y1="12" x2="9.69" y2="12"></line>
-                <line x1="12" y1="2.05" x2="12" y2="9.31"></line>
-            </svg>
-        </div>
-        <h2 id="signup-title">Register New Scanner</h2>
-        <form id="signup-form">
-            <div class="form-group">
-                <label>Display Name (Scanner Name)</label>
-                <input type="text" id="signup-username" required placeholder="e.g. John Doe">
-            </div>
-            <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" id="signup-email" required placeholder="e.g. yourname@gmail.com">
-            </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="signup-password" required placeholder="Create a password">
-            </div>
-            <div class="form-group">
-                <label>Shift</label>
-                <select id="signup-shift" required>
-                    <option value="" disabled selected>Select Shift</option>
-                    <option value="1st Shift">1st Shift</option>
-                    <option value="2nd Shift">2nd Shift</option>
-                </select>
-            </div>
-            <div class="form-group" style="text-align: left;">
-                <label style="display: flex; align-items: center; gap: 8px; font-weight: normal; cursor: pointer;">
-                    <input type="checkbox" id="signup-is-admin" style="width: auto;"> Register as Admin
-                </label>
-            </div>
-            <button type="submit" class="btn btn-primary" id="signup-btn" style="width: 100%;">Sign Up</button>
-            <p style="margin-top: 1rem; font-size: 0.9rem;">Already have an account? <a href="#" onclick="showLoginForm()">Login</a></p>
+            <button type="submit" class="btn btn-primary" id="auth-btn" style="width: 100%;">Login / Register</button>
         </form>
     </div>
 
@@ -457,15 +417,59 @@
                             <select id="remarks" required>
                                 <option value="Excess">Excess</option>
                                 <option value="Stocks Transfer">Stocks Transfer</option>
+                                <option value="RTV">RTV</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>Barcode</label>
-                            <input type="text" id="barcode" required placeholder="Scan Barcode">
+                            <input type="text" id="barcode" required placeholder="Scan Barcode" oninput="handleBarcodeLookup()">
+                        </div>
+                        <div class="form-group">
+                            <label>Product Name</label>
+                            <input type="text" id="product-name" readonly placeholder="Auto-filled from Master" style="background: #f0f0f0;">
+                        </div>
+                        <div class="form-group">
+                            <label>SKU</label>
+                            <input type="text" id="sku" readonly placeholder="Auto-filled" style="background: #f0f0f0;">
+                        </div>
+                        <div class="form-group">
+                            <label>Return Type</label>
+                            <input type="text" id="return-type" readonly placeholder="Auto-filled" style="background: #f0f0f0;">
+                        </div>
+                        <div class="form-group">
+                            <label>Supplier Name</label>
+                            <input type="text" id="supplier-name" readonly placeholder="Auto-filled" style="background: #f0f0f0;">
                         </div>
                         <div class="form-group">
                             <label>Quantity</label>
                             <input type="number" id="qty" required min="1">
+                        </div>
+                        <div class="form-group hidden" id="expiry-container">
+                            <label>Expiration Date</label>
+                            <input type="month" id="expiry-date">
+                        </div>
+                        <div class="form-group hidden" id="item-condition-container">
+                            <label>Item Condition</label>
+                            <select id="item-condition" required>
+                                <option value="" disabled selected>Select Condition</option>
+                                <option value="Good">Good</option>
+                                <option value="Expired">Expired</option>
+                                <option value="Near Expiry">Near Expiry</option>
+                                <option value="Deformed">Deformed</option>
+                                <option value="Dented Box">Dented Box</option>
+                                <option value="Broken">Broken</option>
+                                <option value="Leaked">Leaked</option>
+                                <option value="Contaminated">Contaminated</option>
+                                <option value="Empty Content">Empty Content</option>
+                                <option value="Damaged Cap/Parts">Damaged Cap/Parts</option>
+                                <option value="Incomplete Set">Incomplete Set</option>
+                                <option value="Loose Pharma">Loose Pharma</option>
+                                <option value="Others">Others</option>
+                            </select>
+                        </div>
+                        <div class="form-group hidden" id="custom-condition-container">
+                            <label>Specify Condition</label>
+                            <input type="text" id="custom-condition" placeholder="Enter other condition">
                         </div>
                         <div class="form-group">
                             <label>Box #</label>
@@ -493,27 +497,36 @@
                     <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; flex: 1;">
                         <input type="date" id="start-date-filter" onchange="handleDateRangeChange()" title="Start Date" style="padding: 0.5rem; width: 130px; margin-bottom: 0;">
                         <input type="date" id="end-date-filter" onchange="handleDateRangeChange()" title="End Date" style="padding: 0.5rem; width: 130px; margin-bottom: 0;">
+                        <input type="file" id="master-data-input" accept=".csv" style="display: none;" onchange="importMasterData(event)">
+                        <button class="btn btn-secondary" onclick="document.getElementById('master-data-input').click()">Load Master Data</button>
                         <input type="text" id="search-input" placeholder="Search Barcode/Box" oninput="handleSearch()" style="padding: 0.5rem; width: 160px; margin-bottom: 0;">
                         <button class="btn btn-primary" onclick="exportToCSV()">Export to CSV</button>
                         <button class="btn btn-danger" onclick="bulkDeleteByPallet()" title="Bulk Delete by Pallet #">Bulk Delete</button>
                     </div>
                 </div>
-                <div style="overflow-x: auto; max-height: 600px; overflow-y: auto;">
+                <div style="overflow-x: auto;">
                     <table id="data-table">
                         <thead>
                             <tr>
-                                <th onclick="sortBy('date')">Date</th>
-                                <th onclick="sortBy('time')">Time</th>
-                                <th onclick="sortBy('shift')">Shift</th>
-                                <th onclick="sortBy('barcode')">Barcode</th>
-                                <th onclick="sortBy('qty')">Qty</th>
-                                <th onclick="sortBy('box')">Box #</th>
-                                <th onclick="sortBy('pallet')">Pallet #</th>
-                                <th onclick="sortBy('remarks')">Remarks</th>
-                                <th onclick="sortBy('scanner')">Scanner</th>
-                                <th>Actions</th>
+                                <th style="width: 100px;" onclick="sortBy('date')">Date</th>
+                                <th style="width: 80px;" onclick="sortBy('time')">Time</th>
+                                <th style="width: 100px;" onclick="sortBy('shift')">Shift</th>
+                                <th style="width: 180px;" onclick="sortBy('barcode')">Barcode</th>
+                                <th style="width: 150px;" onclick="sortBy('productName')">Product Name</th>
+                                <th style="width: 100px;" onclick="sortBy('sku')">SKU</th>
+                                <th style="width: 120px;" onclick="sortBy('returnType')">Return Type</th>
+                                <th style="width: 150px;" onclick="sortBy('supplierName')">Supplier</th>
+                                <th style="width: 60px;" onclick="sortBy('qty')">Qty</th>
+                                <th style="width: 100px;" onclick="sortBy('box')">Box #</th>
+                                <th style="width: 100px;" onclick="sortBy('pallet')">Pallet #</th>
+                                <th style="width: 120px;" onclick="sortBy('remarks')">Remarks</th>
+                                <th style="width: 100px;" onclick="sortBy('expiryDate')">Expiry</th>
+                                <th style="width: 120px;" onclick="sortBy('itemCondition')">Condition</th>
+                                <th style="width: 120px;" onclick="sortBy('scanner')">Scanner</th>
+                                <th style="width: 100px;">Actions</th>
                             </tr>
                         </thead>
+                        <!-- ... (existing tbody) ... -->
                         <tbody id="data-body"></tbody>
                     </table>
                 </div>
@@ -522,7 +535,8 @@
                         <label>Rows per page:</label>
                         <select id="rows-per-page" onchange="updateRowsPerPage()">
                             <option value="5">5</option>
-                            <option value="10" selected>10</option>
+                            <option value="10">10</option>
+                            <option value="15" selected>15</option>
                             <option value="20">20</option>
                             <option value="50">50</option>
                         </select>
@@ -565,16 +579,27 @@
 <!-- Dashboard Modal -->
 <div id="dashboard-modal" class="modal-overlay">
     <div class="modal-content card" style="max-width: 800px;">
-        <h3 style="color: var(--primary-color); border-bottom: 2px solid var(--background); padding-bottom: 0.5rem;">Quick Dashboard</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--background); padding-bottom: 0.5rem; margin-bottom: 1rem;">
+            <h3 style="color: var(--primary-color); margin: 0;">Quick Dashboard</h3>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <label style="font-size: 0.85rem; font-weight: 600;">Scanner:</label>
+                    <select id="dashboard-scanner-filter" style="width: 120px; padding: 4px;" onchange="updateDashboardContent()"></select>
+                </div>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <label style="font-size: 0.85rem; font-weight: 600;">Target/Hr:</label>
+                    <input type="number" id="rtv-target" value="25" style="width: 60px; padding: 4px;" onchange="updateDashboardContent()">
+                </div>
+            </div>
+        </div>
         <div id="dashboard-stats" class="dashboard-grid">
             <!-- Dynamic Content -->
         </div>
-        <div id="admin-user-management" style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem; display: none;">
-            <h4 style="font-size: 0.8rem; color: var(--secondary-color); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem;">Pending User Approvals</h4>
-            <div id="pending-users-list" style="margin-top: 0.5rem; font-size: 0.85rem;"></div>
-        </div>
-        <div style="margin-top: 1.5rem; height: 300px;">
+        <div style="margin-top: 1.5rem; height: 250px;">
             <canvas id="trendsChart"></canvas>
+        </div>
+        <div style="margin-top: 1.5rem; height: 250px;">
+            <canvas id="hourlyChart"></canvas>
         </div>
         <div style="margin-top: 2rem; display: flex; justify-content: flex-end;">
             <button class="btn btn-primary" onclick="closeDashboard()">Close Dashboard</button>
@@ -582,59 +607,16 @@
     </div>
 </div>
 
-<!-- Tutorial Modal -->
-<div id="tutorial-modal" class="modal-overlay">
-    <div class="modal-content card" style="max-width: 600px;">
-        <h3 style="color: var(--primary-color); border-bottom: 2px solid var(--background); padding-bottom: 0.5rem;">Welcome to Scan Excess App!</h3>
-        <div style="text-align: left; line-height: 1.6; max-height: 60vh; overflow-y: auto; padding-right: 10px;">
-            <p>This quick guide will help you get started:</p>
-            <ul>
-                <li><strong>Data Entry Form (Left Side):</strong>
-                    <ul>
-                        <li>Fill in details like Barcode, Quantity, Box #, Pallet #.</li>
-                        <li><strong>Remarks:</strong> Choose 'Excess' or 'Stocks Transfer'. Note the validation for 'Stocks Transfer' (Box # starts with SVI-B, Pallet # with SVI-P).</li>
-                        <li><strong>Lock Remarks:</strong> Check the 'Lock' box next to Remarks to keep the same selection for multiple scans.</li>
-                        <li><strong>Quick Scan Mode:</strong> Use the 'Quick Scan Mode' button to hide Date, Time, and Remarks for faster entry.</li>
-                        <li><strong>Barcode Focus:</strong> The Barcode field automatically refocuses after each entry for continuous scanning.</li>
-                    </ul>
-                </li>
-                <li><strong>Data Table (Right Side):</strong>
-                    <ul>
-                        <li>View, Edit, Delete, Sort, and Filter your entries.</li>
-                        <li><strong>Search & Filters:</strong> Use the search bar for Barcode/Box # and the date pickers for date range filtering.</li>
-                        <li><strong>Bulk Delete:</strong> Delete all entries for a specific Pallet #.</li>
-                    </ul>
-                </li>
-                <li><strong>Dashboard:</strong> Click the 'Dashboard' button for a quick overview of your scanning activity and trends.</li>
-                <li><strong>Export:</strong> Use the 'Export to CSV' button to download your data, either all or filtered by Pallet #.</li>
-                <li><strong>Storage Indicator:</strong> Keep an eye on the storage bar in the top right. Export and clear data if it gets too high!</li>
-            </ul>
-            <p>Happy Scanning!</p>
-        </div>
-        <div style="margin-top: 2rem; display: flex; justify-content: flex-end;">
-            <button class="btn btn-primary" onclick="closeTutorial()">Got It!</button>
-        </div>
-    </div>
-</div>
-
 <div id="toast" class="toast"></div>
 
 <script>
-    // Supabase Configuration - REPLACE WITH YOUR PROJECT DETAILS
-    const SUPABASE_URL = 'https://glqhpspdlhbbcwkdrhcv.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdscWhwc3BkbGhiYmN3a2RyaGN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxNTAzMjQsImV4cCI6MjA5MzcyNjMyNH0.305Gr2yEq3D0o0vtf8c36XRuiFNJDc2zoXwyKIzwM_w';
-    const { createClient } = supabase;
-    const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
     // State Management
-    let currentUser = null; // Will be set from Supabase session
+    let currentUser = localStorage.getItem('scan_excess_user') || null;
     let entries = JSON.parse(localStorage.getItem('scan_excess_data')) || [];
-    let currentShift = null; // Will be set from Supabase profile
-    let isAdmin = false; // Will be set from Supabase profile
-    let currentUserId = null; // Supabase auth.uid()
-
+    let currentShift = localStorage.getItem('scan_excess_shift') || null;
+    let db = null;
     let currentPage = 1;
-    let rowsPerPage = 10;
+    let rowsPerPage = 15;
     let currentSortColumn = 'id';
     let currentSortDirection = 'desc';
     let startDateFilter = '';
@@ -642,223 +624,230 @@
     let searchTerm = '';
     let storageWarningShown = false;
     let isQuickScanMode = false;
-    let hasSeenTutorial = localStorage.getItem('scan_excess_tutorial_seen') === 'true';
     let trendsChart = null;
+    let hourlyChart = null;
 
     const authSection = document.getElementById('auth-section');
     const appSection = document.getElementById('app-section');
     const authForm = document.getElementById('auth-form');
-    const signupSection = document.getElementById('signup-section');
-    const signupForm = document.getElementById('signup-form');
     const dataForm = document.getElementById('data-form');
     const dataBody = document.getElementById('data-body');
     const displayScanner = document.getElementById('display-scanner');
-    const tutorialModal = document.getElementById('tutorial-modal');
 
     // Initialize
     function init() {
-        _supabase.auth.getSession().then(({ data: { session } }) => {
-            if (session) {
-                currentUserId = session.user.id;
-                fetchUserProfile(session.user.id); // Fetch profile to get username, shift, admin status
-            }
-        });
-
-        // Always show login initially, profile fetch will redirect to app if session exists
-        showLoginForm();
+        initIndexedDB();
+        if (currentUser) {
+            showApp();
+        } else {
+            showLogin();
+        }
         setCurrentDateTime();
         updateStorageUsage();
+        setupEnterKeyNavigation();
     }
 
-    function showLoginForm() {
-        document.getElementById('auth-form').reset(); // Clear login form
-        document.body.classList.add('auth-mode');
-        authSection.classList.remove('hidden');
-        appSection.classList.add('hidden');
-        signupSection.classList.add('hidden');
-        tutorialModal.classList.add('hidden'); // Ensure tutorial is hidden initially
+    function initIndexedDB() {
+        const request = indexedDB.open("ScanAppDB", 1);
+        request.onupgradeneeded = function(e) {
+            const database = e.target.result;
+            if (!database.objectStoreNames.contains("masterData")) {
+                database.createObjectStore("masterData", { keyPath: "barcode" });
+            }
+        };
+        request.onsuccess = function(e) {
+            db = e.target.result;
+            // Clear old master data from localStorage to free up space
+            localStorage.removeItem('scan_excess_master');
+        };
     }
 
     function setCurrentDateTime() {
         const now = new Date();
-        document.getElementById('date').value = now.toISOString().split('T')[0];
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        document.getElementById('date').value = `${year}-${month}-${day}`;
         document.getElementById('time').value = now.toTimeString().slice(0, 5);
     }
 
-    function showSignupForm() {
-        document.getElementById('signup-form').reset(); // Clear signup form
-        document.body.classList.add('auth-mode');
-        authSection.classList.add('hidden');
-        appSection.classList.add('hidden');
-        signupSection.classList.remove('hidden');
-    }
-
-
     function showApp() {
-        document.body.classList.remove('auth-mode');
         authSection.classList.add('hidden');
         appSection.classList.remove('hidden');
-        displayScanner.textContent = `${isAdmin ? 'ADMIN' : 'Scanner'}: ${currentUser} (${currentShift}) | `;
-        fetchDataFromCloud(); // Fetch data after user profile is loaded
-        if (!hasSeenTutorial) openTutorial(); // Show tutorial if not seen
+        document.body.classList.remove('auth-mode');
+        displayScanner.textContent = `Scanner: ${currentUser} (${currentShift})`;
         renderTable();
     }
 
-    async function fetchUserProfile(userId) {
-        const { data, error } = await _supabase
-            .from('profiles')
-            .select('username, shift, is_admin, is_approved')
-            .eq('id', userId)
-            .single();
+    function showLogin() {
+        authSection.classList.remove('hidden');
+        appSection.classList.add('hidden');
+        document.body.classList.add('auth-mode');
+    }
 
-        if (error) {
-            console.error('Error fetching user profile:', error);
-            // If profile not found, might be a new user who just signed up but profile not created yet
-            // Or an error, so log out.
-            logout();
-            return;
+    function logout() {
+        localStorage.removeItem('scan_excess_user');
+        localStorage.removeItem('scan_excess_shift');
+        location.reload();
+    }
+
+    // Toggle Expiration Date field based on Remarks
+    function updateExpiryVisibility() {
+        const remarksEl = document.getElementById('remarks');
+        const expiryContainer = document.getElementById('expiry-container');
+        const conditionContainer = document.getElementById('item-condition-container');
+        if (remarksEl.value === 'RTV') {
+            expiryContainer.classList.remove('hidden');
+            conditionContainer.classList.remove('hidden');
+        } else {
+            expiryContainer.classList.add('hidden');
+            conditionContainer.classList.add('hidden');
         }
+        updateCustomConditionVisibility();
+    }
 
-        if (data) {
-            if (!data.is_approved) {
-                alert('Your account is pending admin approval. Please wait for confirmation.');
-                logout();
-                return;
-            }
+    document.getElementById('remarks').addEventListener('change', updateExpiryVisibility);
 
-            currentUser = data.username;
-            currentShift = data.shift;
-            isAdmin = data.is_admin;
-            showApp();
+    function updateCustomConditionVisibility() {
+        const conditionEl = document.getElementById('item-condition');
+        const customContainer = document.getElementById('custom-condition-container');
+        const customInput = document.getElementById('custom-condition');
+        const isConditionVisible = !document.getElementById('item-condition-container').classList.contains('hidden');
+
+        if (isConditionVisible && conditionEl.value === 'Others') {
+            customContainer.classList.remove('hidden');
+            customInput.required = true;
+        } else {
+            customContainer.classList.add('hidden');
+            customInput.required = false;
+            if (!isConditionVisible) customInput.value = '';
         }
     }
 
-    // Auth Logic
-    authForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('username').value.trim();
-        const password = document.getElementById('login-password').value;
+    document.getElementById('item-condition').addEventListener('change', updateCustomConditionVisibility);
 
-        if (!email) return alert("Please enter your email.");
+    // Master Data Import and Lookup
+    function importMasterData(event) {
+        const file = event.target.files[0];
+        if (!file || !db) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const text = e.target.result;
+            const rows = text.split('\n').filter(row => row.trim());
+            if (rows.length < 2) return;
 
-        // Authenticate with Supabase
-        const { data, error } = await _supabase.auth.signInWithPassword({
-            email: email,
-            password: password
+            const headers = rows[0].split(',').map(h => h.trim().toLowerCase());
+            const transaction = db.transaction(["masterData"], "readwrite");
+            const store = transaction.objectStore("masterData");
+            
+            // Clear existing master data for a fresh import
+            store.clear();
+            
+            let count = 0;
+            for (let i = 1; i < rows.length; i++) {
+                const values = rows[i].split(',').map(v => v.trim());
+                if (values.length < 2) continue;
+                
+                const entry = {};
+                headers.forEach((h, idx) => {
+                    if (h) entry[h] = values[idx] || '';
+                });
+                
+                if (entry.barcode) {
+                    store.put(entry);
+                    count++;
+                }
+            }
+            
+            transaction.oncomplete = function() {
+                showToast(`Loaded ${count} products into Database!`);
+            };
+        };
+        reader.readAsText(file);
+    }
+
+    function handleBarcodeLookup() {
+        const barcode = document.getElementById('barcode').value.trim();
+        const nameField = document.getElementById('product-name');
+        const skuField = document.getElementById('sku');
+        const returnTypeField = document.getElementById('return-type');
+        const supplierField = document.getElementById('supplier-name');
+
+        if (!db || barcode.length < 3) return;
+
+        const transaction = db.transaction(["masterData"], "readonly");
+        const store = transaction.objectStore("masterData");
+        const request = store.get(barcode);
+
+        request.onsuccess = function() {
+            const result = request.result;
+            if (result) {
+                nameField.value = result.name || result.productname || result.description || Object.values(result)[1] || '';
+                skuField.value = result.sku || '';
+                returnTypeField.value = result.returntype || result['return type'] || '';
+                supplierField.value = result.suppliername || result.supplier || result['supplier name'] || '';
+
+                if (barcode.length > 5) {
+                    setTimeout(() => document.getElementById('qty').focus(), 100);
+                }
+            } else {
+                nameField.value = '';
+                skuField.value = '';
+                returnTypeField.value = '';
+                supplierField.value = '';
+            }
+        };
+    }
+
+    // Navigation logic for Enter key to direct focus to the next visible field
+    function setupEnterKeyNavigation() {
+        const fields = ['barcode', 'product-name', 'sku', 'return-type', 'supplier-name', 'qty', 'expiry-date', 'item-condition', 'custom-condition', 'box', 'pallet'];
+        fields.forEach((id, index) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    let nextIndex = index + 1;
+                    while (nextIndex < fields.length) {
+                        const nextEl = document.getElementById(fields[nextIndex]);
+                        const container = nextEl.closest('.form-group');
+                        // Focus only if the field's container is not hidden
+                        if (container && !container.classList.contains('hidden')) {
+                            nextEl.focus();
+                            return;
+                        }
+                        nextIndex++;
+                    }
+                    // If no more visible fields, trigger save
+                    if (nextIndex >= fields.length) {
+                        document.getElementById('save-btn').click();
+                    }
+                }
+            });
         });
-        if (error) {
-            alert('Login Failed: ' + error.message);
-            return;
-        }
+    }
 
-        if (data.user) {
-            currentUserId = data.user.id;
-            fetchUserProfile(data.user.id); // Fetch profile to get username, shift, admin status
-        }
+    authForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        currentUser = document.getElementById('username').value;
+        currentShift = document.getElementById('shift').value;
+        localStorage.setItem('scan_excess_user', currentUser);
+        localStorage.setItem('scan_excess_shift', currentShift);
+        showApp();
     });
 
-    signupForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const username = document.getElementById('signup-username').value.trim();
-        const email = document.getElementById('signup-email').value.trim();
-        const password = document.getElementById('signup-password').value;
-        const shift = document.getElementById('signup-shift').value;
-        const isAdminUser = document.getElementById('signup-is-admin').checked;
-
-        // 1. Sign up with Supabase Auth
-        const { data: authData, error: authError } = await _supabase.auth.signUp({
-            email: email,
-            password: password,
-        });
-
-        if (authError) {
-            alert('Signup Failed: ' + authError.message);
-            return;
-        }
-
-        if (authData.user && !authData.session) {
-            alert('Registration received! Please note: Email confirmation is enabled in Supabase. Registration cannot complete until confirmed, or disable "Confirm Email" in Supabase settings.');
-            return;
-        }
-
-        if (authData.user) {
-            // 2. Insert profile data into the 'profiles' table
-            const { error: profileError } = await _supabase
-                .from('profiles')
-                .insert([
-                    { id: authData.user.id, username: username, shift: shift, is_admin: isAdminUser, is_approved: false }
-                ]);
-
-            if (profileError) {
-                console.error('Error creating profile:', profileError);
-                alert('Signup successful, but failed to create user profile. Please contact support.');
-                // Optionally, sign out the user if profile creation failed
-                await _supabase.auth.signOut();
-                return;
-            }
-
-            currentUserId = authData.user.id;
-            hasSeenTutorial = false; // New user, so they haven't seen it
-            fetchUserProfile(authData.user.id); // Fetch profile to set app state
-            showToast('Registration successful! Please wait for admin approval.');
-        }
-    });
-
-    async function logout() {
-        // Clear Supabase session
-        await _supabase.auth.signOut();
-        // Clear local app state
-        currentUser = null;
-        currentShift = null;
-        isAdmin = false;
-        currentUserId = null;
-        updateStorageUsage();
-        showLoginForm(); // Redirect to login page
-    }
-
-    async function fetchDataFromCloud() {
-        const { data, error } = await _supabase.from('entries').select('*');
-
-        if (error) {
-            console.error('Error fetching data:', error);
-        } else if (data) {
-            entries = data;
-            saveAndRender();
-        }
-    }
-
-    // Data CRUD Logic
-    dataForm.addEventListener('submit', async (e) => {
+    dataForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
         const entryId = document.getElementById('edit-id').value;
-        const remarks = document.getElementById('remarks').value;
-        const box = document.getElementById('box').value;
-        const pallet = document.getElementById('pallet').value;
         const barcode = document.getElementById('barcode').value;
-
-        // Prevent duplicate barcode in the same box
-        const isDuplicate = entries.some(item => 
-            item.barcode === barcode && 
-            item.box === box && 
-            item.id !== (entryId ? parseInt(entryId) : null)
-        );
-
-        if (isDuplicate) {
-            alert(`Duplicate Error: Barcode ${barcode} has already been scanned into Box ${box}.`);
-            return;
-        }
-
-        // Validation for Stocks Transfer
-        if (remarks === 'Stocks Transfer') {
-            if (!box.startsWith('SVI-B')) {
-                alert('Box # must start with "SVI-B" for Stocks Transfer (e.g., SVI-B1)');
-                return;
-            }
-            if (!pallet.startsWith('SVI-P')) {
-                alert('Pallet # must start with "SVI-P" for Stocks Transfer (e.g., SVI-P1)');
-                return;
-            }
+        const remarks = document.getElementById('remarks').value;
+        const expiryDate = document.getElementById('expiry-date').value;
+        
+        let itemCondition = document.getElementById('item-condition').value;
+        if (itemCondition === 'Others') {
+            itemCondition = document.getElementById('custom-condition').value;
         }
 
         const newEntry = {
@@ -866,41 +855,48 @@
             date: document.getElementById('date').value,
             time: document.getElementById('time').value,
             barcode: barcode,
+            productName: document.getElementById('product-name').value,
+            sku: document.getElementById('sku').value,
+            returnType: document.getElementById('return-type').value,
+            supplierName: document.getElementById('supplier-name').value,
             qty: document.getElementById('qty').value,
-            box: box,
-            pallet: pallet,
+            box: document.getElementById('box').value,
+            pallet: document.getElementById('pallet').value,
             remarks: remarks,
+            expiryDate: remarks === 'RTV' ? expiryDate : null,
+            itemCondition: itemCondition,
             scanner: currentUser,
             shift: currentShift
-            // user_id will be automatically set by the RLS policy's DEFAULT auth.uid()
         };
-        
+
         let message = 'Entry added successfully!';
-        let dbAction;
 
         if (entryId) {
             const index = entries.findIndex(item => item.id === parseInt(entryId));
             entries[index] = newEntry;
             message = 'Entry updated successfully!';
-            dbAction = _supabase.from('entries').update(newEntry).eq('id', entryId).eq('user_id', currentUserId); // Ensure user can only update their own
         } else {
-            dbAction = _supabase.from('entries').insert([{ ...newEntry, user_id: currentUserId }]); // Explicitly set user_id for insert
+            entries.push(newEntry);
+            currentPage = 1; // Return to page 1 to see the newest entry
         }
 
-        const { error } = await dbAction;
-        if (error) {
-            alert('Cloud Sync Error: ' + error.message);
-        } else {
-            if (!entryId) {
-                entries.push(newEntry);
-                currentPage = 1;
-            }
-            saveAndRender();
-            resetForm();
-            showToast(message);
-            fetchDataFromCloud(); // Refresh to get real IDs from DB
-        }
+        saveAndRender();
+        syncDataToServer(newEntry); // Call sync after saving locally
+        resetForm();
+        showToast(message);
     });
+
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        if (!toast) return;
+        toast.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function syncDataToServer(entry) {
+        console.log('Data ready for sync:', entry);
+    }
 
     function saveAndRender() {
         localStorage.setItem('scan_excess_data', JSON.stringify(entries));
@@ -1021,10 +1017,16 @@
                 <td data-label="Time">${item.time}</td>
                 <td data-label="Shift">${item.shift || '-'}</td>
                 <td data-label="Barcode">${item.barcode}</td>
+                <td data-label="Product">${item.productName || '-'}</td>
+                <td data-label="SKU">${item.sku || '-'}</td>
+                <td data-label="Return Type">${item.returnType || '-'}</td>
+                <td data-label="Supplier">${item.supplierName || '-'}</td>
                 <td data-label="Qty">${item.qty}</td>
                 <td data-label="Box #">${item.box}</td>
                 <td data-label="Pallet #">${item.pallet}</td>
                 <td data-label="Remarks">${item.remarks}</td>
+                <td data-label="Expiry">${item.expiryDate || '-'}</td>
+                <td data-label="Condition">${item.itemCondition || '-'}</td>
                 <td data-label="Scanner">${item.scanner}</td>
                 <td class="actions">
                     <button class="btn btn-primary btn-icon" onclick="editEntry(${item.id})" title="Edit">
@@ -1131,10 +1133,35 @@
             document.getElementById('date').value = item.date;
             document.getElementById('time').value = item.time;
             document.getElementById('barcode').value = item.barcode;
+            document.getElementById('product-name').value = item.productName || '';
+            document.getElementById('sku').value = item.sku || '';
+            document.getElementById('return-type').value = item.returnType || '';
+            document.getElementById('supplier-name').value = item.supplierName || '';
             document.getElementById('qty').value = item.qty;
             document.getElementById('box').value = item.box;
             document.getElementById('pallet').value = item.pallet;
             document.getElementById('remarks').value = item.remarks;
+            
+            const standardConditions = ['Good', 'Expired', 'Near Expiry', 'Deformed', 'Dented Box', 'Broken', 'Leaked', 'Contaminated', 'Empty Content', 'Damaged Cap/Parts', 'Incomplete Set', 'Loose Pharma'];
+            if (item.itemCondition && !standardConditions.includes(item.itemCondition)) {
+                document.getElementById('item-condition').value = 'Others';
+                document.getElementById('custom-condition').value = item.itemCondition;
+            } else {
+                document.getElementById('item-condition').value = item.itemCondition || '';
+                document.getElementById('custom-condition').value = '';
+            }
+
+            const expiryContainer = document.getElementById('expiry-container');
+            const conditionContainer = document.getElementById('item-condition-container');
+            if (item.remarks === 'RTV') {
+                expiryContainer.classList.remove('hidden');
+                conditionContainer.classList.remove('hidden');
+                if (item.expiryDate) document.getElementById('expiry-date').value = item.expiryDate.substring(0, 7);
+            } else {
+                expiryContainer.classList.add('hidden');
+                conditionContainer.classList.add('hidden');
+            }
+            updateCustomConditionVisibility();
             
             document.getElementById('save-btn').textContent = 'Update Entry';
             document.getElementById('cancel-btn').classList.remove('hidden');
@@ -1150,11 +1177,18 @@
         document.getElementById('edit-id').value = '';
         document.getElementById('save-btn').textContent = 'Add Entry';
         document.getElementById('cancel-btn').classList.add('hidden');
+        document.getElementById('expiry-container').classList.add('hidden');
+        document.getElementById('item-condition-container').classList.add('hidden');
+        document.getElementById('custom-condition-container').classList.add('hidden');
         setCurrentDateTime();
 
         if (isLocked) {
             document.getElementById('remarks').value = remarksVal;
             document.getElementById('lock-remarks').checked = true;
+            if (remarksVal === 'RTV') {
+                document.getElementById('expiry-container').classList.remove('hidden');
+                document.getElementById('item-condition-container').classList.remove('hidden');
+            }
         }
         document.getElementById('barcode').focus();
     }
@@ -1173,6 +1207,7 @@
             btn.textContent = 'Standard Mode';
             btn.classList.replace('btn-secondary', 'btn-primary');
             document.getElementById('lock-remarks').checked = true;
+            updateExpiryVisibility(); // Ensure expiry shows if RTV was pre-selected
         } else {
             btn.textContent = 'Quick Scan Mode';
             btn.classList.replace('btn-primary', 'btn-secondary');
@@ -1180,17 +1215,16 @@
         document.getElementById('barcode').focus();
     }
 
-    function openTutorial() {
-        tutorialModal.style.display = 'flex';
-    }
-
-    function closeTutorial() {
-        tutorialModal.style.display = 'none';
-        localStorage.setItem('scan_excess_tutorial_seen', 'true');
-        hasSeenTutorial = true;
-    }
-
     function openDashboard() {
+        const filterSelect = document.getElementById('dashboard-scanner-filter');
+        const uniqueScanners = [...new Set(entries.map(e => e.scanner))].sort();
+        
+        let options = '<option value="all">All Scanners</option>';
+        uniqueScanners.forEach(scanner => {
+            options += `<option value="${scanner}">${scanner}</option>`;
+        });
+        filterSelect.innerHTML = options;
+
         updateDashboardContent();
         document.getElementById('dashboard-modal').style.display = 'flex';
     }
@@ -1199,43 +1233,37 @@
         document.getElementById('dashboard-modal').style.display = 'none';
     }
 
-    async function approveUser(userId) {
-        const { error } = await _supabase
-            .from('profiles')
-            .update({ is_approved: true })
-            .eq('id', userId);
-        
-        if (error) {
-            alert('Approval failed: ' + error.message);
-        } else {
-            showToast('User approved successfully');
-            updateDashboardContent();
-        }
-    }
-
-    async function updateDashboardContent() {
+    function updateDashboardContent() {
         const statsContainer = document.getElementById('dashboard-stats');
-        const adminSection = document.getElementById('admin-user-management');
-        const pendingList = document.getElementById('pending-users-list');
+        const targetInput = document.getElementById('rtv-target');
+        const scannerFilter = document.getElementById('dashboard-scanner-filter').value;
+        const rtvTarget = targetInput ? parseInt(targetInput.value) : 25;
 
-        if (isAdmin) {
-            adminSection.style.display = 'block';
-            const { data: pendingUsers } = await _supabase.from('profiles').select('*').eq('is_approved', false);
-            pendingList.innerHTML = (pendingUsers && pendingUsers.length > 0) 
-                ? pendingUsers.map(u => `
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #faf9f8; border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 0.5rem;">
-                        <span><strong>${u.username}</strong> (${u.shift}) - ${u.is_admin ? 'Admin' : 'Scanner'}</span>
-                        <button class="btn btn-success" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" onclick="approveUser('${u.id}')">Approve</button>
-                    </div>`).join('')
-                : '<p style="color: var(--secondary-color); font-size: 0.8rem; font-style: italic;">No pending approvals.</p>';
-        } else {
-            adminSection.style.display = 'none';
-        }
+        // Filter entries based on selected scanner
+        const filteredDashboardEntries = scannerFilter === 'all' 
+            ? entries 
+            : entries.filter(e => e.scanner === scannerFilter);
 
-        const totalEntries = entries.length;
-        const totalQty = entries.reduce((sum, e) => sum + Number(e.qty), 0);
+        const totalEntries = filteredDashboardEntries.length;
+        const totalQty = filteredDashboardEntries.reduce((sum, e) => sum + Number(e.qty), 0);
         
-        const shiftData = entries.reduce((acc, e) => {
+        // Calculate Hourly Stats
+        const hourlyRTV = new Array(24).fill(0);
+        const hourlyTotal = new Array(24).fill(0);
+        
+        filteredDashboardEntries.forEach(e => {
+            if (e.time) {
+                const hour = parseInt(e.time.split(':')[0]);
+                hourlyTotal[hour]++;
+                if (e.remarks === 'RTV') hourlyRTV[hour]++;
+            }
+        });
+
+        const rtvEntries = filteredDashboardEntries.filter(e => e.remarks === 'RTV');
+        const uniqueDays = [...new Set(filteredDashboardEntries.map(e => e.date))].length || 1;
+        const avgRtvHr = (rtvEntries.length / (uniqueDays * 24)).toFixed(1);
+
+        const shiftData = filteredDashboardEntries.reduce((acc, e) => {
             const s = e.shift || 'Unknown';
             acc[s] = (acc[s] || 0) + Number(e.qty);
             return acc;
@@ -1250,6 +1278,10 @@
         statsContainer.innerHTML = `
             <div class="dashboard-stat"><h4>Total Entries</h4><p>${totalEntries}</p></div>
             <div class="dashboard-stat"><h4>Total Quantity</h4><p>${totalQty.toLocaleString()}</p></div>
+            <div class="dashboard-stat">
+                <h4>Avg RTV/Hr</h4>
+                <p>${avgRtvHr} <span style="font-size: 0.8rem; color: ${avgRtvHr >= rtvTarget ? 'var(--success-color)' : 'var(--danger-color)'}"> (vs ${rtvTarget})</span></p>
+            </div>
             <div class="dashboard-stat" style="grid-column: span 2;">
                 <h4>Shift Performance (Qty)</h4>
                 <div style="margin-top: 5px; font-size: 0.85rem;">
@@ -1259,7 +1291,7 @@
         `;
 
         // Prepare Trend Data (Count per Date)
-        const trends = entries.reduce((acc, e) => {
+        const trends = filteredDashboardEntries.reduce((acc, e) => {
             acc[e.date] = (acc[e.date] || 0) + 1;
             return acc;
         }, {});
@@ -1288,6 +1320,47 @@
                 responsive: true,
                 maintainAspectRatio: false,
                 scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+            }
+        });
+
+        // Hourly Production Chart
+        const ctxHourly = document.getElementById('hourlyChart').getContext('2d');
+        if (hourlyChart) hourlyChart.destroy();
+
+        hourlyChart = new Chart(ctxHourly, {
+            type: 'bar',
+            data: {
+                labels: Array.from({length: 24}, (_, i) => `${i}:00`),
+                datasets: [
+                    {
+                        label: 'RTV Scans',
+                        data: hourlyRTV,
+                        backgroundColor: 'rgba(176, 43, 40, 0.6)',
+                        borderColor: 'var(--danger-color)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Total Scans',
+                        data: hourlyTotal,
+                        backgroundColor: 'rgba(0, 115, 230, 0.2)',
+                        borderColor: 'var(--primary-color)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'RTV Target',
+                        data: new Array(24).fill(rtvTarget),
+                        type: 'line',
+                        borderColor: '#267d3d',
+                        borderDash: [5, 5],
+                        fill: false,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true } }
             }
         });
     }
@@ -1339,7 +1412,7 @@
             filenameSuffix = `pallet_${palletVal}`;
         }
 
-        const headers = ['Line #', 'Date', 'Time', 'Shift', 'Barcode', 'Qty', 'Box #', 'Pallet #', 'Remarks', 'Scanner'];
+        const headers = ['Line #', 'Date', 'Time', 'Shift', 'Barcode', 'Product Name', 'SKU', 'Return Type', 'Supplier', 'Qty', 'Box #', 'Pallet #', 'Remarks', 'Expiry Date', 'Item Condition', 'Scanner'];
         const csvRows = [
             headers.join(','),
             ...dataToExport.map((row, index) => [
@@ -1347,11 +1420,17 @@
                 row.date,
                 row.time,
                 row.shift || '-',
-                `"${row.barcode}"`, // Wrap barcode in quotes to prevent scientific notation in Excel
+                `="\t${row.barcode}"`, // Use formula syntax with a tab to force Excel to treat as text
+                `"${row.productName || ''}"`,
+                `"${row.sku || ''}"`,
+                `"${row.returnType || ''}"`,
+                `"${row.supplierName || ''}"`,
                 row.qty,
                 `"${row.box}"`,
                 `"${row.pallet}"`,
                 `"${row.remarks}"`,
+                row.expiryDate || '',
+                `"${row.itemCondition || ''}"`,
                 row.scanner
             ].join(','))
         ];
@@ -1370,44 +1449,6 @@
         closeExportModal();
     }
 
-    function showToast(message) {
-        const toast = document.getElementById('toast');
-        toast.textContent = message;
-        toast.classList.add('show');
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 3000);
-    }
-
-    // Sync Logic (Conceptual - you need a server-side endpoint)
-    async function syncDataToServer(dataToSync) {
-        // Replace with your actual Google Apps Script Web App URL or your backend API endpoint
-        const SERVER_API_URL = 'YOUR_SERVER_API_ENDPOINT_HERE';
-
-        if (SERVER_API_URL === 'YOUR_SERVER_API_ENDPOINT_HERE') {
-            console.warn('SERVER_API_URL is not configured. Data will only be saved locally.');
-            return;
-        }
-
-        try {
-            const response = await fetch(SERVER_API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(dataToSync),
-            });
-
-            const result = await response.json();
-            console.log('Server response:', result);
-        } catch (error) {
-            console.error('Error syncing data to server:', error);
-        }
-    }
-
     // Start the app
     init();
 </script>
-
-</body>
-</html>    
