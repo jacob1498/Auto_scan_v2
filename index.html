@@ -998,7 +998,6 @@
 
     function renderTable() {
         dataBody.innerHTML = '';
-        updateSummary();
 
         // Update header UI
         document.querySelectorAll('th[onclick]').forEach(th => {
@@ -1024,11 +1023,16 @@
             return isAfterStartDate && isBeforeEndDate;
         });
 
-        // 2. Filter entries based on search term (applied to date-filtered results)
-        const filteredEntries = dateFilteredEntries.filter(item => 
-            String(item.barcode).toLowerCase().includes(searchTerm) || 
-            String(item.box).toLowerCase().includes(searchTerm)
-        );
+        // 2. Filter based on Remark and Search Term
+        const remarkFilter = document.getElementById('table-remark-filter').value;
+        const filteredEntries = dateFilteredEntries.filter(item => {
+            const matchesRemark = remarkFilter === 'all' || item.remarks === remarkFilter;
+            const matchesSearch = String(item.barcode).toLowerCase().includes(searchTerm) || 
+                                 String(item.box).toLowerCase().includes(searchTerm);
+            return matchesRemark && matchesSearch;
+        });
+
+        updateSummary(filteredEntries);
 
         const sortedEntries = [...filteredEntries].sort((a, b) => {
             let valA = a[currentSortColumn];
@@ -1126,12 +1130,14 @@
         renderTable();
     }
 
-    function updateSummary() {
+    function updateSummary(filteredData) {
         const summaryContainer = document.getElementById('summary-section');
         if (!summaryContainer) return;
 
+        const data = filteredData || entries;
+
         // Calculate totals grouped by Remarks
-        const totals = entries.reduce((acc, entry) => {
+        const totals = data.reduce((acc, entry) => {
             const type = entry.remarks || 'Other';
             acc[type] = (acc[type] || 0) + Number(entry.qty);
             return acc;
