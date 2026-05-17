@@ -508,8 +508,11 @@
                         </select>
                         <input type="text" id="search-input" placeholder="Search Barcode/Box" oninput="handleSearch()" style="padding: 0.5rem; width: 160px; margin-bottom: 0;">
                         <div style="display: flex; gap: 4px; background: #f3f2f1; padding: 4px; border-radius: 4px; border: 1px solid var(--border-color); align-items: center;">
-                            <input type="file" id="master-data-input" accept=".csv" style="display: none;" onchange="importMasterData(event)">
-                            <button type="button" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="document.getElementById('master-data-input').click()" title="Master Data (F2)">Master Data (F2)</button>
+                            <input type="file" id="master-data-input" accept=".csv" style="display: none;" onchange="importMasterData(event)">                            <div class="master-data-btn-wrapper">
+                                <button type="button" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="document.getElementById('master-data-input').click()" title="Master Data (F2)">Master Data (F2)</button>
+                                <span id="master-data-count-badge" class="master-data-count-badge">0</span>
+                            </div>
+                            <button type="button" class="btn btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="clearMasterData()" title="Clear Master Data">Clear Master</button>
                             <button type="button" class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="exportToCSV()" title="Export (F4)">Export (F4)</button>
                             <button type="button" class="btn btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.75rem;" onclick="bulkDeleteByPallet()" title="Bulk Delete (F8)">Bulk Delete (F8)</button>
                         </div>
@@ -650,6 +653,7 @@
         initIndexedDB();
         if (currentUser) {
             showApp();
+            updateMasterDataCountBadge(); // Ensure badge is updated on app load
         } else {
             showLogin();
         }
@@ -657,6 +661,24 @@
         updateStorageUsage();
         setupEnterKeyNavigation();
         setupGlobalShortcuts();
+        updateMasterDataCountBadge(); // Initial call
+    }
+
+    function clearMasterData() {
+        if (!db) {
+            showToast('Database not ready.');
+            return;
+        }
+        if (confirm('Are you sure you want to clear ALL master data? This action cannot be undone.')) {
+            const transaction = db.transaction(["masterData"], "readwrite");
+            const store = transaction.objectStore("masterData");
+            store.clear();
+
+            transaction.oncomplete = function() {
+                showToast('Master data cleared successfully!');
+                updateMasterDataCountBadge();
+            };
+        }
     }
 
     function initIndexedDB() {
@@ -673,6 +695,7 @@
             localStorage.removeItem('scan_excess_master');
         };
     }
+
 
     function setCurrentDateTime() {
         const now = new Date();
@@ -810,6 +833,7 @@
             
             transaction.oncomplete = function() {
                 showToast(`Loaded ${count} products into Database!`);
+                updateMasterDataCountBadge();
             };
         };
         reader.readAsText(file);
@@ -845,6 +869,27 @@
                 returnTypeField.value = '';
                 supplierField.value = '';
             }
+        };
+    }
+
+    function updateMasterDataCountBadge() {
+        const badge = document.getElementById('master-data-count-badge');
+        if (!db || !badge) {
+            badge.style.display = 'none';
+            return;
+        }
+
+        const transaction = db.transaction(["masterData"], "readonly");
+        const store = transaction.objectStore("masterData");
+        const request = store.count();
+
+        request.onsuccess = function() {
+            const count = request.result;
+            badge.textContent = count;
+            badge.style.display = count > 0 ? 'inline-block' : 'none';
+        };
+        request.onerror = function() {
+            badge.style.display = 'none';
         };
     }
 
@@ -911,7 +956,10 @@
         const barcode = document.getElementById('barcode').value;
         const remarks = document.getElementById('remarks').value;
         const isRTV = remarks === 'RTV';
-        const expiryDate = isRTV ? document.getElementById('expiry-date').value : null;
+        const expiryInputVal = document.getElementById('expiry-date').value;
+        let expiryDate = isRTV && expiryInputVal ? expiryInputVal : null;
+        // Standardize to yyyy-mm-dd by appending -01 only if it's currently yyyy-mm
+        if (expiryDate && expiryDate.length === 7) expiryDate += '-01';
         
         let itemCondition = isRTV ? document.getElementById('item-condition').value : null;
         if (isRTV && itemCondition === 'Others') {
